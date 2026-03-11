@@ -304,7 +304,12 @@ function App() {
         />
       )}
 
-      {/* 하단 링크 */}
+      {/* 하단 왼쪽 제작자 */}
+      <div className="absolute bottom-2 left-4 z-[9999]">
+        <span className="text-[10px] text-white/40">제작자: HR YOON(경남 황산초등학교)</span>
+      </div>
+
+      {/* 하단 오른쪽 링크 */}
       <div className="absolute bottom-2 right-4 z-[9999] flex gap-3">
         <span className="text-[10px] text-white/40">교실 스크린 — 교실에서 사용하는 무료 위젯 화면 도구</span>
         <a href="/privacy" target="_blank" className="text-[10px] text-white/40 hover:text-white/70 transition-colors">개인정보처리방침</a>
