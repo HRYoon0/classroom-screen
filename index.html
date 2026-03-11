@@ -6,30 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Gothic+A1&family=Do+Hyeon&family=Jua&family=Gamja+Flower&family=Hi+Melody&family=Gaegu&family=Black+Han+Sans&family=Sunflower:wght@300;500&family=Cute+Font&family=Dokdo&family=Poor+Story&family=Single+Day&family=Stylish&family=Gugi&family=Song+Myung&family=East+Sea+Dokdo&display=swap" rel="stylesheet" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Gothic+A1&family=Do+Hyeon&family=Jua&family=Gamja+Flower&family=Hi+Melody&family=Gaegu&family=Black+Han+Sans&family=Sunflower:wght@300;500&family=Cute+Font&family=Dokdo&family=Poor+Story&family=Single+Day&family=Stylish&family=Gugi&family=Song+Myung&family=East+Sea+Dokdo&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Gothic+A1&family=Do+Hyeon&family=Jua&family=Gamja+Flower&family=Hi+Melody&family=Gaegu&family=Black+Han+Sans&family=Sunflower:wght@300;500&family=Cute+Font&family=Dokdo&family=Poor+Story&family=Single+Day&family=Stylish&family=Gugi&family=Song+Myung&family=East+Sea+Dokdo&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
     <title>교실 스크린 - 교실에서 사용하는 무료 위젯 화면 도구</title>
     <meta name="description" content="교실 스크린은 시계, 타이머, 텍스트, 투표, 주사위 등 다양한 위젯을 자유롭게 배치하여 교실 화면을 구성할 수 있는 무료 웹 도구입니다. Google 로그인으로 설정을 클라우드에 저장하고 어디서든 동일하게 사용할 수 있습니다." />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <div id="root"></div>
-    <!-- 모든 한글 폰트 서브셋 미리 로드 -->
+    <!-- 한글 폰트 서브셋 로드 (페이지 로드 후 지연 실행) -->
     <script>
-      // 한글 유니코드 범위 전체를 커버하는 샘플 문자열
-      // 각 서브셋(약 100자 단위)에서 1글자씩 추출
-      var kr = '';
-      for (var i = 0xAC00; i <= 0xD7A3; i += 100) {
-        kr += String.fromCharCode(i);
-      }
-      kr += '가나다라마바사아자차카타파하';
-      var fonts = [
-        'Nanum Gothic','Nanum Myeongjo','Gothic A1','Do Hyeon','Jua',
-        'Gamja Flower','Hi Melody','Gaegu','Black Han Sans','Sunflower',
-        'Cute Font','Dokdo','Poor Story','Single Day','Stylish','Gugi',
-        'Song Myung','East Sea Dokdo','Nanum Pen Script','Nanum Brush Script'
-      ];
-      fonts.forEach(function(f) {
-        document.fonts.load('24px "' + f + '"', kr);
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var kr = '가나다라마바사아자차카타파하';
+          var fonts = [
+            'Nanum Gothic','Nanum Myeongjo','Gothic A1','Do Hyeon','Jua',
+            'Gamja Flower','Hi Melody','Gaegu','Black Han Sans','Sunflower',
+            'Cute Font','Dokdo','Poor Story','Single Day','Stylish','Gugi',
+            'Song Myung','East Sea Dokdo','Nanum Pen Script','Nanum Brush Script'
+          ];
+          fonts.forEach(function(f) {
+            document.fonts.load('24px "' + f + '"', kr);
+          });
+        }, 2000);
       });
     </script>
     <script type="module" src="/src/main.tsx"></script>
