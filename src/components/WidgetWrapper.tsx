@@ -174,7 +174,7 @@ export default function WidgetWrapper({
 
         {/* 위젯 본체 */}
         <div
-          className="widget-card flex flex-col h-full w-full overflow-hidden cursor-grab active:cursor-grabbing"
+          className="widget-card flex flex-col h-full w-full overflow-hidden cursor-grab active:cursor-grabbing [&_[contenteditable]]:cursor-text"
           onMouseDown={handleDragStart}
         >
           <div className="flex-1 overflow-hidden min-h-0" style={{ padding: 24 }}>{children}</div>
