@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Gothic+A1&family=Do+Hyeon&family=Jua&family=Gamja+Flower&family=Hi+Melody&family=Gaegu&family=Black+Han+Sans&family=Sunflower:wght@300;500&family=Cute+Font&family=Dokdo&family=Poor+Story&family=Single+Day&family=Stylish&family=Gugi&family=Song+Myung&family=East+Sea+Dokdo&display=swap" rel="stylesheet" />
+    <title>교실 스크린</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- 모든 한글 폰트 서브셋 미리 로드 -->
+    <script>
+      // 한글 유니코드 범위 전체를 커버하는 샘플 문자열
+      // 각 서브셋(약 100자 단위)에서 1글자씩 추출
+      var kr = '';
+      for (var i = 0xAC00; i <= 0xD7A3; i += 100) {
+        kr += String.fromCharCode(i);
+      }
+      kr += '가나다라마바사아자차카타파하';
+      var fonts = [
+        'Nanum Gothic','Nanum Myeongjo','Gothic A1','Do Hyeon','Jua',
+        'Gamja Flower','Hi Melody','Gaegu','Black Han Sans','Sunflower',
+        'Cute Font','Dokdo','Poor Story','Single Day','Stylish','Gugi',
+        'Song Myung','East Sea Dokdo','Nanum Pen Script','Nanum Brush Script'
+      ];
+      fonts.forEach(function(f) {
+        document.fonts.load('24px "' + f + '"', kr);
+      });
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
