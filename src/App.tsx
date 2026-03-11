@@ -82,31 +82,28 @@ function App() {
     saveBackground(bg);
   };
 
+  // 로그인 로딩 상태
+  const [loginLoading, setLoginLoading] = useState(false);
+
   // 구글 로그인 + 자동 로드
   const handleSignIn = async () => {
-    setSyncing(true);
-    showMsg('로그인 중...');
+    setLoginLoading(true);
     try {
       await signIn();
-      showMsg('사용자 정보 불러오는 중...');
       const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
-      if (info) {
-        setUser(info);
-      }
+      if (info) setUser(info);
       if (data) {
         loadAll(data.widgets as Parameters<typeof loadAll>[0]);
         if (data.background) {
           setBackground(data.background);
           saveBackground(data.background);
         }
-        showMsg(`${info?.name || ''}님 로그인 완료`);
-      } else {
-        showMsg(`${info?.name || ''}님 로그인 완료`);
       }
+      showMsg(`${info?.name || ''}님 로그인 완료`);
     } catch {
       showMsg('로그인 실패');
     }
-    setSyncing(false);
+    setLoginLoading(false);
   };
 
   // 페이지 로드 시: Auth 초기화 + 저장된 토큰이 있으면 세션 복구 (팝업 없음)
@@ -173,6 +170,16 @@ function App() {
 
   return (
     <div className="w-full h-full relative overflow-hidden" style={bgStyle}>
+      {/* 로그인 로딩 오버레이 */}
+      {loginLoading && (
+        <div className="absolute inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl flex flex-col items-center gap-4" style={{ padding: '32px 48px' }}>
+            <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-medium text-slate-700">로그인 중...</p>
+          </div>
+        </div>
+      )}
+
       {/* 오른쪽 상단 버튼들 */}
       <div className="absolute top-4 right-4 z-[9999] flex items-center gap-2">
         {/* 동기화 메시지 */}

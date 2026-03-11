@@ -108,6 +108,7 @@ export function signOut() {
     google.accounts.oauth2.revoke(accessToken, () => {});
   }
   accessToken = null;
+  cachedFileId = null;
   localStorage.removeItem(TOKEN_KEY);
 }
 
@@ -115,14 +116,19 @@ export function isSignedIn() {
   return !!accessToken;
 }
 
+// 파일 ID 캐시 (매번 검색 API 호출 방지)
+let cachedFileId: string | null = null;
+
 // appDataFolder에서 파일 ID 찾기
-async function findFileId(): Promise<string | null> {
+async function findFileId(useCache = true): Promise<string | null> {
+  if (useCache && cachedFileId) return cachedFileId;
   const res = await fetch(
     `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${FILE_NAME}'&fields=files(id)`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
   const data = await res.json();
-  return data.files?.[0]?.id || null;
+  cachedFileId = data.files?.[0]?.id || null;
+  return cachedFileId;
 }
 
 // 구글 드라이브에서 데이터 로드
@@ -187,6 +193,10 @@ export async function saveToDrive(data: CloudData): Promise<boolean> {
           body: form,
         }
       );
+      if (res.ok) {
+        const created = await res.json();
+        cachedFileId = created.id;
+      }
       return res.ok;
     }
   } catch {
