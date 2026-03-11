@@ -303,6 +303,12 @@ function App() {
           onClose={() => setShowSettings(false)}
         />
       )}
+
+      {/* 하단 링크 */}
+      <div className="absolute bottom-2 right-4 z-[9999] flex gap-3">
+        <a href="/privacy" target="_blank" className="text-[10px] text-white/40 hover:text-white/70 transition-colors">개인정보처리방침</a>
+        <a href="/terms" target="_blank" className="text-[10px] text-white/40 hover:text-white/70 transition-colors">서비스 약관</a>
+      </div>
     </div>
   );
 }
