@@ -27,11 +27,33 @@ export interface CloudData {
   background: string;
 }
 
-// Google 로그인 초기화
+// tokenClient를 한 번만 생성하고 재사용
+let tokenClient: ReturnType<typeof google.accounts.oauth2.initTokenClient> | null = null;
+let pendingResolve: ((token: string) => void) | null = null;
+let pendingReject: ((err: Error) => void) | null = null;
+
+// Google 로그인 초기화 + tokenClient 미리 생성
 export function initGoogleAuth(): Promise<void> {
   return new Promise((resolve) => {
     const check = () => {
       if (typeof google !== 'undefined' && google.accounts) {
+        // tokenClient 미리 생성 (로그인 버튼 클릭 시 즉시 사용)
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: (response) => {
+            if (response.error) {
+              pendingReject?.(new Error(response.error));
+              pendingResolve = null;
+              pendingReject = null;
+              return;
+            }
+            saveToken(response.access_token!);
+            pendingResolve?.(accessToken!);
+            pendingResolve = null;
+            pendingReject = null;
+          },
+        });
         resolve();
       } else {
         setTimeout(check, 100);
@@ -53,44 +75,25 @@ function scheduleRefresh() {
   if (refreshTimer) clearTimeout(refreshTimer);
   refreshTimer = window.setTimeout(() => {
     refreshToken();
-  }, 50 * 60 * 1000); // 50분
+  }, 50 * 60 * 1000);
 }
 
 // 팝업 없이 토큰 갱신
 function refreshToken() {
-  if (typeof google === 'undefined') return;
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: SCOPES,
-    callback: (response) => {
-      if (response.error || !response.access_token) {
-        // 갱신 실패 시 로그아웃 처리
-        accessToken = null;
-        localStorage.removeItem(TOKEN_KEY);
-        return;
-      }
-      saveToken(response.access_token);
-    },
-  });
-  client.requestAccessToken({ prompt: '' });
+  if (!tokenClient) return;
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
-// 토큰 요청 (로그인) - 매번 새 tokenClient 생성하여 callback 갱신
+// 토큰 요청 (로그인) - 미리 생성된 tokenClient 재사용
 export function signIn(): Promise<string> {
   return new Promise((resolve, reject) => {
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: CLIENT_ID,
-      scope: SCOPES,
-      callback: (response) => {
-        if (response.error) {
-          reject(new Error(response.error));
-          return;
-        }
-        saveToken(response.access_token!);
-        resolve(accessToken!);
-      },
-    });
-    client.requestAccessToken({ prompt: '' });
+    if (!tokenClient) {
+      reject(new Error('Google Auth not initialized'));
+      return;
+    }
+    pendingResolve = resolve;
+    pendingReject = reject;
+    tokenClient.requestAccessToken({ prompt: '' });
   });
 }
 
@@ -110,14 +113,16 @@ export function signOut() {
   accessToken = null;
   cachedFileId = null;
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(FILE_ID_KEY);
 }
 
 export function isSignedIn() {
   return !!accessToken;
 }
 
-// 파일 ID 캐시 (매번 검색 API 호출 방지)
-let cachedFileId: string | null = null;
+// 파일 ID 캐시 (매번 검색 API 호출 방지) - localStorage에도 저장
+const FILE_ID_KEY = 'classroom-screen-file-id';
+let cachedFileId: string | null = localStorage.getItem(FILE_ID_KEY);
 
 // appDataFolder에서 파일 ID 찾기
 async function findFileId(useCache = true): Promise<string | null> {
@@ -128,6 +133,7 @@ async function findFileId(useCache = true): Promise<string | null> {
   );
   const data = await res.json();
   cachedFileId = data.files?.[0]?.id || null;
+  if (cachedFileId) localStorage.setItem(FILE_ID_KEY, cachedFileId);
   return cachedFileId;
 }
 
@@ -136,7 +142,19 @@ export async function loadFromDrive(): Promise<CloudData | null> {
   if (!accessToken) return null;
 
   try {
-    const fileId = await findFileId();
+    // 캐시된 fileId로 먼저 시도 (API 호출 1회 절약)
+    if (cachedFileId) {
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${cachedFileId}?alt=media`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      if (res.ok) return await res.json();
+      // 캐시 무효 → 다시 검색
+      cachedFileId = null;
+      localStorage.removeItem(FILE_ID_KEY);
+    }
+
+    const fileId = await findFileId(false);
     if (!fileId) return null;
 
     const res = await fetch(
@@ -196,6 +214,7 @@ export async function saveToDrive(data: CloudData): Promise<boolean> {
       if (res.ok) {
         const created = await res.json();
         cachedFileId = created.id;
+        if (cachedFileId) localStorage.setItem(FILE_ID_KEY, cachedFileId);
       }
       return res.ok;
     }

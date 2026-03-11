@@ -87,9 +87,10 @@ function App() {
 
   // 구글 로그인 + 자동 로드
   const handleSignIn = async () => {
-    setLoginLoading(true);
     try {
+      // 팝업이 닫힌 후 토큰 받으면 로딩 표시
       await signIn();
+      setLoginLoading(true);
       const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
       if (info) setUser(info);
       if (data) {
