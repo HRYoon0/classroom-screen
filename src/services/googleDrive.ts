@@ -94,11 +94,7 @@ export function signIn(): Promise<string> {
     }
     pendingResolve = resolve;
     pendingReject = reject;
-    const savedEmail = localStorage.getItem(USER_EMAIL_KEY);
-    tokenClient.requestAccessToken({
-      prompt: '',
-      ...(savedEmail ? { login_hint: savedEmail } : {}),
-    });
+    tokenClient.requestAccessToken({ prompt: '' });
   });
 }
 
