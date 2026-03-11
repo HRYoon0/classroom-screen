@@ -84,33 +84,29 @@ function App() {
 
   // 구글 로그인 + 자동 로드
   const handleSignIn = async () => {
+    setSyncing(true);
+    showMsg('로그인 중...');
     try {
-      console.log('[Auth] 로그인 시도...');
-      const token = await signIn();
-      console.log('[Auth] 토큰 획득:', token ? '성공' : '실패');
-      const info = await getUserInfo();
-      console.log('[Auth] 사용자 정보:', info);
+      await signIn();
+      showMsg('사용자 정보 불러오는 중...');
+      const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
       if (info) {
         setUser(info);
-        showMsg(`${info.name}님 로그인 완료`);
-      } else {
-        showMsg('로그인 완료 (프로필 로드 실패)');
       }
-      // 클라우드에서 자동 로드
-      const data = await loadFromDrive();
-      console.log('[Auth] 클라우드 데이터:', data ? '있음' : '없음');
       if (data) {
         loadAll(data.widgets as Parameters<typeof loadAll>[0]);
         if (data.background) {
           setBackground(data.background);
           saveBackground(data.background);
         }
-        showMsg('클라우드에서 불러오기 완료');
+        showMsg(`${info?.name || ''}님 로그인 완료`);
+      } else {
+        showMsg(`${info?.name || ''}님 로그인 완료`);
       }
-    } catch (e) {
-      console.error('[Auth] 로그인 에러:', e);
+    } catch {
       showMsg('로그인 실패');
     }
+    setSyncing(false);
   };
 
   // 페이지 로드 시: Auth 초기화 + 저장된 토큰이 있으면 세션 복구 (팝업 없음)
