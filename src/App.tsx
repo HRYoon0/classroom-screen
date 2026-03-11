@@ -14,6 +14,7 @@ import {
   loadFromDrive,
   getUserInfo,
   restoreSession,
+  saveLoginHint,
 } from './services/googleDrive';
 
 function App() {
@@ -92,7 +93,10 @@ function App() {
       await signIn();
       setLoginLoading(true);
       const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
-      if (info) setUser(info);
+      if (info) {
+        setUser(info);
+        saveLoginHint(info.email);
+      }
       if (data) {
         loadAll(data.widgets as Parameters<typeof loadAll>[0]);
         if (data.background) {

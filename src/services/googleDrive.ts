@@ -8,6 +8,8 @@ const TOKEN_KEY = 'classroom-screen-token';
 let accessToken: string | null = localStorage.getItem(TOKEN_KEY);
 let refreshTimer: number | null = null;
 
+const USER_EMAIL_KEY = 'classroom-screen-email';
+
 // 타입 선언
 declare const google: {
   accounts: {
@@ -16,8 +18,7 @@ declare const google: {
         client_id: string;
         scope: string;
         callback: (response: { access_token?: string; error?: string }) => void;
-      }) => { requestAccessToken: (opts?: { prompt?: string }) => void };
-      revoke: (token: string, cb: () => void) => void;
+      }) => { requestAccessToken: (opts?: { prompt?: string; login_hint?: string }) => void };
     };
   };
 };
@@ -93,7 +94,11 @@ export function signIn(): Promise<string> {
     }
     pendingResolve = resolve;
     pendingReject = reject;
-    tokenClient.requestAccessToken({ prompt: '' });
+    const savedEmail = localStorage.getItem(USER_EMAIL_KEY);
+    tokenClient.requestAccessToken({
+      prompt: '',
+      ...(savedEmail ? { login_hint: savedEmail } : {}),
+    });
   });
 }
 
@@ -104,16 +109,19 @@ export function restoreSession() {
   }
 }
 
-// 로그아웃
+// 로그인한 이메일 저장 (다음 로그인 시 계정 선택 건너뛰기용)
+export function saveLoginHint(email: string) {
+  localStorage.setItem(USER_EMAIL_KEY, email);
+}
+
+// 로그아웃 (토큰만 정리, 앱 권한은 유지하여 다음 로그인 시 동의 화면 생략)
 export function signOut() {
   if (refreshTimer) clearTimeout(refreshTimer);
-  if (accessToken) {
-    google.accounts.oauth2.revoke(accessToken, () => {});
-  }
   accessToken = null;
   cachedFileId = null;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(FILE_ID_KEY);
+  // USER_EMAIL_KEY는 유지 (다음 로그인 시 계정 자동 선택용)
 }
 
 export function isSignedIn() {
