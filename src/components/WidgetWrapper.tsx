@@ -8,7 +8,7 @@ interface Props {
   onRemove: (id: string) => void;
   onBringToFront: (id: string) => void;
   children: ReactNode;
-  title: string;
+  title?: string;
 }
 
 export default function WidgetWrapper({
@@ -17,7 +17,7 @@ export default function WidgetWrapper({
   onRemove,
   onBringToFront,
   children,
-  title,
+  title: _title,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);

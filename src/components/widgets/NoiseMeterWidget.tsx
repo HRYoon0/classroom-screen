@@ -50,12 +50,6 @@ export default function NoiseMeterWidget() {
     };
   }, []);
 
-  const getColor = () => {
-    if (level < 30) return 'bg-green-400';
-    if (level < 60) return 'bg-yellow-400';
-    return 'bg-red-400';
-  };
-
   return (
     <div className="flex flex-col items-center justify-center h-full gap-3">
       {/* 레벨 바 */}

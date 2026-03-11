@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { WIDGET_LIST } from '../constants';
+
 import type { WidgetType } from '../types/widget';
 import {
   IoTimerOutline,
