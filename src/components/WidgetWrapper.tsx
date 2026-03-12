@@ -147,7 +147,7 @@ export default function WidgetWrapper({
           left: 0,
           top: 0,
           width: widget.w,
-          height: widget.h,
+          height: widget.h * (scaleY / scaleX),
           zIndex: widget.zIndex,
           transformOrigin: 'left top',
           transform: `translateX(${widget.x * scaleX}px) translateY(${widget.y * scaleY}px) scale(${scaleSize})`,
