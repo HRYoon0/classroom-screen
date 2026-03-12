@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { IoExpand, IoContract, IoCloudUpload, IoCloudDownload } from 'react-icons/io5';
+import { IoExpand, IoContract, IoCloudDownload } from 'react-icons/io5';
 import { useWidgetStore, loadBackground, saveBackground } from './store/widgetStore';
 import Toolbar from './components/Toolbar';
 import BackgroundPicker from './components/BackgroundPicker';
@@ -93,6 +93,7 @@ function App() {
         setUser(info);
       }
       if (data) {
+        skipAutoSaveRef.current = true;
         loadAll(data.widgets as Parameters<typeof loadAll>[0]);
         if (data.background) {
           setBackground(data.background);
@@ -129,17 +130,30 @@ function App() {
     showMsg('로그아웃 완료');
   };
 
-  // 클라우드에 저장
-  const handleSave = async () => {
-    if (!isSignedIn()) {
-      showMsg('먼저 로그인해주세요');
+  // 자동 저장 (30초 디바운스)
+  const autoSaveTimerRef = useRef<number>(0);
+  const skipAutoSaveRef = useRef(false); // 클라우드 로드 직후 자동 저장 방지
+  const widgetsRef = useRef(widgets);
+  const backgroundRef = useRef(background);
+  widgetsRef.current = widgets;
+  backgroundRef.current = background;
+
+  useEffect(() => {
+    if (!user) return; // 로그인 상태에서만 자동 저장
+    if (skipAutoSaveRef.current) {
+      skipAutoSaveRef.current = false;
       return;
     }
-    setSyncing(true);
-    const ok = await saveToDrive({ widgets, background });
-    setSyncing(false);
-    showMsg(ok ? '클라우드에 저장 완료' : '저장 실패');
-  };
+
+    clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = window.setTimeout(async () => {
+      if (!isSignedIn()) return;
+      const ok = await saveToDrive({ widgets: widgetsRef.current, background: backgroundRef.current });
+      if (ok) showMsg('자동 저장 완료');
+    }, 30000);
+
+    return () => clearTimeout(autoSaveTimerRef.current);
+  }, [widgets, background, user]);
 
   // 클라우드에서 불러오기
   const handleLoad = async () => {
@@ -151,6 +165,7 @@ function App() {
     const data = await loadFromDrive();
     setSyncing(false);
     if (data) {
+      skipAutoSaveRef.current = true;
       loadAll(data.widgets as Parameters<typeof loadAll>[0]);
       if (data.background) {
         setBackground(data.background);
@@ -190,26 +205,16 @@ function App() {
           </div>
         )}
 
-        {/* 클라우드 저장/불러오기 */}
+        {/* 클라우드에서 불러오기 */}
         {user && (
-          <>
-            <button
-              onClick={handleSave}
-              disabled={syncing}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-white/60 text-slate-600 hover:bg-white hover:text-indigo-600 transition-colors disabled:opacity-50"
-              title="클라우드에 저장"
-            >
-              <IoCloudUpload size={18} />
-            </button>
-            <button
-              onClick={handleLoad}
-              disabled={syncing}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-white/60 text-slate-600 hover:bg-white hover:text-indigo-600 transition-colors disabled:opacity-50"
-              title="클라우드에서 불러오기"
-            >
-              <IoCloudDownload size={18} />
-            </button>
-          </>
+          <button
+            onClick={handleLoad}
+            disabled={syncing}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-white/60 text-slate-600 hover:bg-white hover:text-indigo-600 transition-colors disabled:opacity-50"
+            title="클라우드에서 불러오기"
+          >
+            <IoCloudDownload size={18} />
+          </button>
         )}
 
         {/* 로그인/프로필 */}
