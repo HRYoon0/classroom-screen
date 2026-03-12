@@ -340,7 +340,7 @@ function App() {
 
       {/* 하단 왼쪽 제작자 */}
       <div className="absolute bottom-2 left-4 z-[9999]">
-        <span className="text-[10px] text-white/40">제작자: HR YOON(경남 황산초등학교)</span>
+        <span className="text-[10px] text-white/40">제작자: 윤희류(경남 황산초등학교)</span>
       </div>
 
       {/* 하단 오른쪽 링크 */}
