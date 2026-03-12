@@ -4,7 +4,9 @@ import type { WidgetData } from '../types/widget';
 
 interface Props {
   widget: WidgetData;
-  scale: number;
+  scaleX: number;
+  scaleY: number;
+  scaleSize: number;
   onUpdate: (id: string, data: Partial<WidgetData>) => void;
   onRemove: (id: string) => void;
   onBringToFront: (id: string) => void;
@@ -14,7 +16,9 @@ interface Props {
 
 export default function WidgetWrapper({
   widget,
-  scale,
+  scaleX,
+  scaleY,
+  scaleSize,
   onUpdate,
   onRemove,
   onBringToFront,
@@ -26,7 +30,7 @@ export default function WidgetWrapper({
   const [isHovered, setIsHovered] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
 
-  // 드래그 (마우스 이동량을 가상 좌표로 변환)
+  // 드래그
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {
       const el = e.target as HTMLElement;
@@ -46,11 +50,9 @@ export default function WidgetWrapper({
       const startY = widget.y;
 
       const handleMove = (ev: MouseEvent) => {
-        const dx = (ev.clientX - startMouseX) / scale;
-        const dy = (ev.clientY - startMouseY) / scale;
         onUpdate(widget.id, {
-          x: startX + dx,
-          y: startY + dy,
+          x: startX + (ev.clientX - startMouseX) / scaleX,
+          y: startY + (ev.clientY - startMouseY) / scaleY,
         });
       };
 
@@ -63,10 +65,10 @@ export default function WidgetWrapper({
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [widget.id, widget.x, widget.y, scale, onUpdate, onBringToFront]
+    [widget.id, widget.x, widget.y, scaleX, scaleY, onUpdate, onBringToFront]
   );
 
-  // 리사이즈 (마우스 이동량을 가상 좌표로 변환)
+  // 리사이즈
   const handleResize = useCallback(
     (e: React.MouseEvent, corner: string) => {
       e.preventDefault();
@@ -81,8 +83,8 @@ export default function WidgetWrapper({
       const startY = widget.y;
 
       const handleMove = (ev: MouseEvent) => {
-        const dx = (ev.clientX - startMouseX) / scale;
-        const dy = (ev.clientY - startMouseY) / scale;
+        const dx = (ev.clientX - startMouseX) / scaleSize;
+        const dy = (ev.clientY - startMouseY) / scaleSize;
 
         let newX = startX;
         let newY = startY;
@@ -107,7 +109,6 @@ export default function WidgetWrapper({
           newY = startY + dy;
         }
 
-        // 최소 크기 제한 (가상 좌표 기준)
         if (newW < 120) { newW = 120; if (corner.includes('left')) newX = startX + startW - 120; }
         if (newH < 80) { newH = 80; if (corner.includes('top')) newY = startY + startH - 80; }
 
@@ -122,7 +123,7 @@ export default function WidgetWrapper({
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [widget.id, widget.x, widget.y, widget.w, widget.h, scale, onUpdate, onBringToFront]
+    [widget.id, widget.x, widget.y, widget.w, widget.h, scaleSize, onUpdate, onBringToFront]
   );
 
   const handleClickOutside = useCallback(() => {
@@ -143,11 +144,13 @@ export default function WidgetWrapper({
         ref={containerRef}
         className="absolute flex flex-col select-none group"
         style={{
-          left: widget.x,
-          top: widget.y,
+          left: 0,
+          top: 0,
           width: widget.w,
           height: widget.h,
           zIndex: widget.zIndex,
+          transformOrigin: 'left top',
+          transform: `translateX(${widget.x * scaleX}px) translateY(${widget.y * scaleY}px) scale(${scaleSize})`,
           cursor: isDragging ? 'grabbing' : 'default',
         }}
         onMouseDown={() => {

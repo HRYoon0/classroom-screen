@@ -5,7 +5,7 @@ import Toolbar from './components/Toolbar';
 import BackgroundPicker from './components/BackgroundPicker';
 import WidgetRenderer from './components/WidgetRenderer';
 import { BACKGROUNDS } from './constants';
-import { useCanvasScale, VIRTUAL_WIDTH } from './hooks/useCanvasScale';
+import { useCanvasScale } from './hooks/useCanvasScale';
 
 import {
   signIn,
@@ -30,7 +30,7 @@ function App() {
   const [background, setBackground] = useState(
     () => loadBackground() || BACKGROUNDS[0]
   );
-  const { scale, virtualHeight } = useCanvasScale();
+  const { scaleX, scaleY, scaleSize } = useCanvasScale();
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -297,39 +297,31 @@ function App() {
         </button>
       </div>
 
-      {/* 가상 캔버스 (너비 1920 고정, 높이는 뷰포트에 맞게 동적) */}
-      <div
-        className="absolute"
-        style={{
-          width: VIRTUAL_WIDTH,
-          height: virtualHeight,
-          transformOrigin: 'top left',
-          transform: `scale(${scale})`,
-        }}
-      >
-        {widgets.map((widget) => (
-          <WidgetRenderer
-            key={widget.id}
-            widget={widget}
-            scale={scale}
-            onUpdate={updateWidget}
-            onRemove={removeWidget}
-            onBringToFront={bringToFront}
-            onConfigChange={updateConfig}
-          />
-        ))}
+      {/* 위젯 캔버스 */}
+      {widgets.map((widget) => (
+        <WidgetRenderer
+          key={widget.id}
+          widget={widget}
+          scaleX={scaleX}
+          scaleY={scaleY}
+          scaleSize={scaleSize}
+          onUpdate={updateWidget}
+          onRemove={removeWidget}
+          onBringToFront={bringToFront}
+          onConfigChange={updateConfig}
+        />
+      ))}
 
-        {/* 빈 화면 안내 */}
-        {widgets.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center text-white/70">
-              <p className="text-5xl mb-4">🏫</p>
-              <h1 className="text-2xl font-bold mb-2">ClassBoard</h1>
-              <p className="text-sm">아래 도구 모음에서 위젯을 추가하세요</p>
-            </div>
+      {/* 빈 화면 안내 */}
+      {widgets.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-center text-white/70">
+            <p className="text-5xl mb-4">🏫</p>
+            <h1 className="text-2xl font-bold mb-2">ClassBoard</h1>
+            <p className="text-sm">아래 도구 모음에서 위젯을 추가하세요</p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 하단 도구 모음 */}
       <Toolbar
