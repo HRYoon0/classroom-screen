@@ -143,13 +143,11 @@ export default function WidgetWrapper({
         ref={containerRef}
         className="absolute flex flex-col select-none group"
         style={{
-          left: 0,
-          top: 0,
+          left: widget.x,
+          top: widget.y,
           width: widget.w,
           height: widget.h,
           zIndex: widget.zIndex,
-          transformOrigin: 'left top',
-          transform: `translateX(${widget.x * scale}px) translateY(${widget.y * scale}px) scale(${scale})`,
           cursor: isDragging ? 'grabbing' : 'default',
         }}
         onMouseDown={() => {

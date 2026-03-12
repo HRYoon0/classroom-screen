@@ -1,20 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
-// 가상 캔버스 기준 너비 (모든 위젯 좌표는 이 기준으로 저장)
+// 가상 캔버스 기준 크기
 export const VIRTUAL_WIDTH = 1920;
+export const VIRTUAL_HEIGHT = 1080;
 
-function calcScale() {
-  return window.innerWidth / VIRTUAL_WIDTH;
+interface CanvasLayout {
+  scale: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+function calcLayout(): CanvasLayout {
+  const scale = Math.min(
+    window.innerWidth / VIRTUAL_WIDTH,
+    window.innerHeight / VIRTUAL_HEIGHT
+  );
+  return {
+    scale,
+    offsetX: (window.innerWidth - VIRTUAL_WIDTH * scale) / 2,
+    offsetY: (window.innerHeight - VIRTUAL_HEIGHT * scale) / 2,
+  };
 }
 
 export function useCanvasScale() {
-  const [scale, setScale] = useState(calcScale);
+  const [layout, setLayout] = useState(calcLayout);
+
+  const handleResize = useCallback(() => setLayout(calcLayout()), []);
 
   useEffect(() => {
-    const handleResize = () => setScale(calcScale());
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [handleResize]);
 
-  return scale;
+  return layout;
 }
