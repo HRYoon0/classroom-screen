@@ -18,7 +18,7 @@ export interface CloudData {
 // 팝업 방식 로그인 - Promise로 토큰 반환
 export function signIn(): Promise<string> {
   return new Promise((resolve, reject) => {
-    const redirectUri = window.location.origin + window.location.pathname;
+    const redirectUri = window.location.origin;
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       redirect_uri: redirectUri,
