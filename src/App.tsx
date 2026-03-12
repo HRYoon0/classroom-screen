@@ -5,6 +5,7 @@ import Toolbar from './components/Toolbar';
 import BackgroundPicker from './components/BackgroundPicker';
 import WidgetRenderer from './components/WidgetRenderer';
 import { BACKGROUNDS } from './constants';
+import { useCanvasScale } from './hooks/useCanvasScale';
 import {
   signIn,
   signOut,
@@ -28,6 +29,7 @@ function App() {
   const [background, setBackground] = useState(
     () => loadBackground() || BACKGROUNDS[0]
   );
+  const scale = useCanvasScale();
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -299,6 +301,7 @@ function App() {
         <WidgetRenderer
           key={widget.id}
           widget={widget}
+          scale={scale}
           onUpdate={updateWidget}
           onRemove={removeWidget}
           onBringToFront={bringToFront}
