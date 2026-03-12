@@ -17,7 +17,8 @@ import WorkSymbolsWidget from './widgets/WorkSymbolsWidget';
 
 interface Props {
   widget: WidgetData;
-  scale: number;
+  scaleX: number;
+  scaleY: number;
   onUpdate: (id: string, data: Partial<WidgetData>) => void;
   onRemove: (id: string) => void;
   onBringToFront: (id: string) => void;
@@ -62,7 +63,8 @@ function renderWidgetContent(
 
 export default function WidgetRenderer({
   widget,
-  scale,
+  scaleX,
+  scaleY,
   onUpdate,
   onRemove,
   onBringToFront,
@@ -73,7 +75,8 @@ export default function WidgetRenderer({
   return (
     <WidgetWrapper
       widget={widget}
-      scale={scale}
+      scaleX={scaleX}
+      scaleY={scaleY}
       onUpdate={onUpdate}
       onRemove={onRemove}
       onBringToFront={onBringToFront}

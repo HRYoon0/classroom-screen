@@ -5,20 +5,14 @@ export const VIRTUAL_WIDTH = 1920;
 export const VIRTUAL_HEIGHT = 1080;
 
 interface CanvasLayout {
-  scale: number;
-  offsetX: number;
-  offsetY: number;
+  scaleX: number;
+  scaleY: number;
 }
 
 function calcLayout(): CanvasLayout {
-  const scale = Math.min(
-    window.innerWidth / VIRTUAL_WIDTH,
-    window.innerHeight / VIRTUAL_HEIGHT
-  );
   return {
-    scale,
-    offsetX: (window.innerWidth - VIRTUAL_WIDTH * scale) / 2,
-    offsetY: (window.innerHeight - VIRTUAL_HEIGHT * scale) / 2,
+    scaleX: window.innerWidth / VIRTUAL_WIDTH,
+    scaleY: window.innerHeight / VIRTUAL_HEIGHT,
   };
 }
 

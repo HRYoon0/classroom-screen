@@ -4,7 +4,8 @@ import type { WidgetData } from '../types/widget';
 
 interface Props {
   widget: WidgetData;
-  scale: number;
+  scaleX: number;
+  scaleY: number;
   onUpdate: (id: string, data: Partial<WidgetData>) => void;
   onRemove: (id: string) => void;
   onBringToFront: (id: string) => void;
@@ -14,7 +15,8 @@ interface Props {
 
 export default function WidgetWrapper({
   widget,
-  scale,
+  scaleX,
+  scaleY,
   onUpdate,
   onRemove,
   onBringToFront,
@@ -46,8 +48,8 @@ export default function WidgetWrapper({
       const startY = widget.y;
 
       const handleMove = (ev: MouseEvent) => {
-        const dx = (ev.clientX - startMouseX) / scale;
-        const dy = (ev.clientY - startMouseY) / scale;
+        const dx = (ev.clientX - startMouseX) / scaleX;
+        const dy = (ev.clientY - startMouseY) / scaleY;
         onUpdate(widget.id, {
           x: startX + dx,
           y: startY + dy,
@@ -63,7 +65,7 @@ export default function WidgetWrapper({
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [widget.id, widget.x, widget.y, scale, onUpdate, onBringToFront]
+    [widget.id, widget.x, widget.y, scaleX, scaleY, onUpdate, onBringToFront]
   );
 
   // 리사이즈 (마우스 이동량을 가상 좌표로 변환)
@@ -81,8 +83,8 @@ export default function WidgetWrapper({
       const startY = widget.y;
 
       const handleMove = (ev: MouseEvent) => {
-        const dx = (ev.clientX - startMouseX) / scale;
-        const dy = (ev.clientY - startMouseY) / scale;
+        const dx = (ev.clientX - startMouseX) / scaleX;
+        const dy = (ev.clientY - startMouseY) / scaleY;
 
         let newX = startX;
         let newY = startY;
@@ -122,7 +124,7 @@ export default function WidgetWrapper({
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [widget.id, widget.x, widget.y, widget.w, widget.h, scale, onUpdate, onBringToFront]
+    [widget.id, widget.x, widget.y, widget.w, widget.h, scaleX, scaleY, onUpdate, onBringToFront]
   );
 
   const handleClickOutside = useCallback(() => {
