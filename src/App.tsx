@@ -341,6 +341,7 @@ function App() {
       {/* 하단 왼쪽 제작자 */}
       <div className="absolute bottom-2 left-4 z-[9999]">
         <span className="text-[10px] text-white/40">제작자: 윤희류(경남 황산초등학교)</span>
+        <a href="https://classroomscreen.com/" target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/40 hover:text-white/70 transition-colors ml-2">참고: classroomscreen.com</a>
       </div>
 
       {/* 하단 오른쪽 링크 */}
