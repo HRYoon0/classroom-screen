@@ -12,7 +12,6 @@ import {
   saveToDrive,
   loadFromDrive,
   getUserInfo,
-  handleAuthRedirect,
 } from './services/googleDrive';
 
 function App() {
@@ -84,35 +83,40 @@ function App() {
   // 로그인 로딩 상태
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // 구글 로그인 (리다이렉트 방식 - 페이지 이동)
-  const handleSignIn = () => {
-    signIn(); // Google 로그인 페이지로 이동
+  // 구글 로그인 (팝업 방식)
+  const handleSignIn = async () => {
+    try {
+      await signIn(); // 팝업에서 토큰 받을 때까지 대기
+      setLoginLoading(true);
+      const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
+      if (info) {
+        setUser(info);
+      }
+      if (data) {
+        loadAll(data.widgets as Parameters<typeof loadAll>[0]);
+        if (data.background) {
+          setBackground(data.background);
+          saveBackground(data.background);
+        }
+      }
+      showMsg(`${info?.name || ''}님 로그인 완료`);
+    } catch {
+      // 팝업 닫힘 또는 차단 — 무시
+    }
+    setLoginLoading(false);
   };
 
-  // 페이지 로드 시: 리다이렉트 복귀 처리 또는 기존 세션 복구
+  // 페이지 로드 시: 저장된 토큰이 있으면 세션 복구
   useEffect(() => {
-    const justLoggedIn = handleAuthRedirect();
-
-    if (justLoggedIn || isSignedIn()) {
-      // 리다이렉트 복귀 또는 기존 토큰이 있으면 사용자 정보 + 클라우드 데이터 로드
-      if (justLoggedIn) setLoginLoading(true);
+    if (isSignedIn()) {
       (async () => {
-        const [info, data] = await Promise.all([getUserInfo(), justLoggedIn ? loadFromDrive() : Promise.resolve(null)]);
+        const info = await getUserInfo();
         if (info) {
           setUser(info);
-          if (justLoggedIn && data) {
-            loadAll(data.widgets as Parameters<typeof loadAll>[0]);
-            if (data.background) {
-              setBackground(data.background);
-              saveBackground(data.background);
-            }
-            showMsg(`${info.name}님 로그인 완료`);
-          }
         } else {
           // 토큰 만료 → 정리
           signOut();
         }
-        setLoginLoading(false);
       })();
     }
   }, []);

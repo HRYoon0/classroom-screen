@@ -1,4 +1,4 @@
-// Google Drive API 연동 - 리다이렉트 방식 OAuth + appDataFolder
+// Google Drive API 연동 - 팝업 방식 OAuth + appDataFolder
 
 const CLIENT_ID = '739342381531-n47l404ioq2a9pssu0unha5sv5j75vit.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata openid profile email';
@@ -15,34 +15,61 @@ export interface CloudData {
   background: string;
 }
 
-// 리다이렉트 방식 로그인 (페이지 이동 → Google → 돌아옴)
-export function signIn() {
-  const redirectUri = window.location.origin + window.location.pathname;
-  const params = new URLSearchParams({
-    client_id: CLIENT_ID,
-    redirect_uri: redirectUri,
-    response_type: 'token',
-    scope: SCOPES,
-    include_granted_scopes: 'true',
+// 팝업 방식 로그인 - Promise로 토큰 반환
+export function signIn(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const redirectUri = window.location.origin + window.location.pathname;
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      redirect_uri: redirectUri,
+      response_type: 'token',
+      scope: SCOPES,
+      include_granted_scopes: 'true',
+      prompt: 'select_account',
+    });
+
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+    const w = 500;
+    const h = 600;
+    const left = window.screenX + (window.outerWidth - w) / 2;
+    const top = window.screenY + (window.outerHeight - h) / 2;
+    const popup = window.open(url, 'google-auth', `width=${w},height=${h},left=${left},top=${top}`);
+
+    if (!popup) {
+      reject(new Error('팝업이 차단되었습니다'));
+      return;
+    }
+
+    // 팝업 URL 변화 감지 (리다이렉트 후 해시에서 토큰 추출)
+    const timer = setInterval(() => {
+      try {
+        if (popup.closed) {
+          clearInterval(timer);
+          reject(new Error('로그인 취소'));
+          return;
+        }
+        // 같은 origin으로 돌아오면 URL 접근 가능
+        const popupUrl = popup.location.href;
+        if (popupUrl.startsWith(redirectUri) && popupUrl.includes('#')) {
+          clearInterval(timer);
+          const hash = popup.location.hash;
+          popup.close();
+
+          const hashParams = new URLSearchParams(hash.substring(1));
+          const token = hashParams.get('access_token');
+          if (token) {
+            accessToken = token;
+            localStorage.setItem(TOKEN_KEY, token);
+            resolve(token);
+          } else {
+            reject(new Error('토큰을 받지 못했습니다'));
+          }
+        }
+      } catch {
+        // cross-origin 에러 무시 (아직 Google 페이지에 있는 동안)
+      }
+    }, 200);
   });
-  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-}
-
-// URL 해시에서 토큰 추출 (Google 리다이렉트 후 호출)
-export function handleAuthRedirect(): boolean {
-  const hash = window.location.hash;
-  if (!hash || !hash.includes('access_token')) return false;
-
-  const params = new URLSearchParams(hash.substring(1));
-  const token = params.get('access_token');
-  if (token) {
-    accessToken = token;
-    localStorage.setItem(TOKEN_KEY, token);
-    // URL 해시 정리 (토큰 노출 방지)
-    history.replaceState(null, '', window.location.pathname);
-    return true;
-  }
-  return false;
 }
 
 // 로그아웃 (토큰만 정리, 앱 권한은 유지)
