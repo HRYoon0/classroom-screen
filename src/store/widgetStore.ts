@@ -62,11 +62,37 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
 // 로컬 스토리지 키
 const STORAGE_KEY = 'classboard-widgets';
 const BG_STORAGE_KEY = 'classboard-bg';
+const CANVAS_VERSION_KEY = 'classboard-canvas-version';
+const VIRTUAL_WIDTH = 1920;
+const VIRTUAL_HEIGHT = 1080;
+
+// 옛날 픽셀 좌표 → 가상 캔버스 좌표로 1회 변환
+function migrateToVirtualCanvas(widgets: WidgetData[]): WidgetData[] {
+  if (widgets.length === 0) return widgets;
+  if (localStorage.getItem(CANVAS_VERSION_KEY) === '2') return widgets;
+
+  const scaleX = VIRTUAL_WIDTH / window.innerWidth;
+  const scaleY = VIRTUAL_HEIGHT / window.innerHeight;
+
+  const migrated = widgets.map((w) => ({
+    ...w,
+    x: w.x * scaleX,
+    y: w.y * scaleY,
+    w: w.w * scaleX,
+    h: w.h * scaleY,
+  }));
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+  localStorage.setItem(CANVAS_VERSION_KEY, '2');
+  return migrated;
+}
 
 function loadWidgets(): WidgetData[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const widgets: WidgetData[] = JSON.parse(raw);
+    return migrateToVirtualCanvas(widgets);
   } catch {
     return [];
   }
