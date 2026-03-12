@@ -60,8 +60,8 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
 }
 
 // 로컬 스토리지 키
-const STORAGE_KEY = 'classroom-screen-widgets';
-const BG_STORAGE_KEY = 'classroom-screen-bg';
+const STORAGE_KEY = 'classboard-widgets';
+const BG_STORAGE_KEY = 'classboard-bg';
 
 function loadWidgets(): WidgetData[] {
   try {

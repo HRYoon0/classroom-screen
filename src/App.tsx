@@ -6,15 +6,13 @@ import BackgroundPicker from './components/BackgroundPicker';
 import WidgetRenderer from './components/WidgetRenderer';
 import { BACKGROUNDS } from './constants';
 import {
-  initGoogleAuth,
   signIn,
   signOut,
   isSignedIn,
   saveToDrive,
   loadFromDrive,
   getUserInfo,
-  restoreSession,
-  saveLoginHint,
+  handleAuthRedirect,
 } from './services/googleDrive';
 
 function App() {
@@ -86,44 +84,35 @@ function App() {
   // 로그인 로딩 상태
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // 구글 로그인 + 자동 로드
-  const handleSignIn = async () => {
-    try {
-      // 팝업이 닫힌 후 토큰 받으면 로딩 표시
-      await signIn();
-      setLoginLoading(true);
-      const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
-      if (info) {
-        setUser(info);
-        saveLoginHint(info.email);
-      }
-      if (data) {
-        loadAll(data.widgets as Parameters<typeof loadAll>[0]);
-        if (data.background) {
-          setBackground(data.background);
-          saveBackground(data.background);
-        }
-      }
-      showMsg(`${info?.name || ''}님 로그인 완료`);
-    } catch {
-      showMsg('로그인 실패');
-    }
-    setLoginLoading(false);
+  // 구글 로그인 (리다이렉트 방식 - 페이지 이동)
+  const handleSignIn = () => {
+    signIn(); // Google 로그인 페이지로 이동
   };
 
-  // 페이지 로드 시: Auth 초기화 + 저장된 토큰이 있으면 세션 복구 (팝업 없음)
+  // 페이지 로드 시: 리다이렉트 복귀 처리 또는 기존 세션 복구
   useEffect(() => {
-    initGoogleAuth();
-    if (isSignedIn()) {
-      restoreSession(); // 토큰 갱신 타이머 시작
+    const justLoggedIn = handleAuthRedirect();
+
+    if (justLoggedIn || isSignedIn()) {
+      // 리다이렉트 복귀 또는 기존 토큰이 있으면 사용자 정보 + 클라우드 데이터 로드
+      if (justLoggedIn) setLoginLoading(true);
       (async () => {
-        const info = await getUserInfo();
+        const [info, data] = await Promise.all([getUserInfo(), justLoggedIn ? loadFromDrive() : Promise.resolve(null)]);
         if (info) {
           setUser(info);
+          if (justLoggedIn && data) {
+            loadAll(data.widgets as Parameters<typeof loadAll>[0]);
+            if (data.background) {
+              setBackground(data.background);
+              saveBackground(data.background);
+            }
+            showMsg(`${info.name}님 로그인 완료`);
+          }
         } else {
           // 토큰 만료 → 정리
           signOut();
         }
+        setLoginLoading(false);
       })();
     }
   }, []);
@@ -291,7 +280,7 @@ function App() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-white/70">
             <p className="text-5xl mb-4">🏫</p>
-            <h1 className="text-2xl font-bold mb-2">교실 스크린</h1>
+            <h1 className="text-2xl font-bold mb-2">ClassBoard</h1>
             <p className="text-sm">아래 도구 모음에서 위젯을 추가하세요</p>
           </div>
         </div>

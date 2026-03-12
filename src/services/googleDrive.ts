@@ -1,132 +1,61 @@
-// Google Drive API 연동 - appDataFolder에 설정 저장/로드
+// Google Drive API 연동 - 리다이렉트 방식 OAuth + appDataFolder
 
 const CLIENT_ID = '739342381531-n47l404ioq2a9pssu0unha5sv5j75vit.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata openid profile email';
-const FILE_NAME = 'classroom-screen-data.json';
+const FILE_NAME = 'classboard-data.json';
 
-const TOKEN_KEY = 'classroom-screen-token';
+const TOKEN_KEY = 'classboard-token';
+const FILE_ID_KEY = 'classboard-file-id';
+
 let accessToken: string | null = localStorage.getItem(TOKEN_KEY);
-let refreshTimer: number | null = null;
-
-const USER_EMAIL_KEY = 'classroom-screen-email';
-
-// 타입 선언
-declare const google: {
-  accounts: {
-    oauth2: {
-      initTokenClient: (config: {
-        client_id: string;
-        scope: string;
-        callback: (response: { access_token?: string; error?: string }) => void;
-      }) => { requestAccessToken: (opts?: { prompt?: string; login_hint?: string }) => void };
-    };
-  };
-};
+let cachedFileId: string | null = localStorage.getItem(FILE_ID_KEY);
 
 export interface CloudData {
   widgets: unknown[];
   background: string;
 }
 
-// tokenClient를 한 번만 생성하고 재사용
-let tokenClient: ReturnType<typeof google.accounts.oauth2.initTokenClient> | null = null;
-let pendingResolve: ((token: string) => void) | null = null;
-let pendingReject: ((err: Error) => void) | null = null;
-
-// Google 로그인 초기화 + tokenClient 미리 생성
-export function initGoogleAuth(): Promise<void> {
-  return new Promise((resolve) => {
-    const check = () => {
-      if (typeof google !== 'undefined' && google.accounts) {
-        // tokenClient 미리 생성 (로그인 버튼 클릭 시 즉시 사용)
-        tokenClient = google.accounts.oauth2.initTokenClient({
-          client_id: CLIENT_ID,
-          scope: SCOPES,
-          callback: (response) => {
-            if (response.error) {
-              pendingReject?.(new Error(response.error));
-              pendingResolve = null;
-              pendingReject = null;
-              return;
-            }
-            saveToken(response.access_token!);
-            pendingResolve?.(accessToken!);
-            pendingResolve = null;
-            pendingReject = null;
-          },
-        });
-        resolve();
-      } else {
-        setTimeout(check, 100);
-      }
-    };
-    check();
+// 리다이렉트 방식 로그인 (페이지 이동 → Google → 돌아옴)
+export function signIn() {
+  const redirectUri = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: 'token',
+    scope: SCOPES,
+    include_granted_scopes: 'true',
   });
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
 }
 
-// 토큰 저장 + 50분 후 자동 갱신 타이머 설정
-function saveToken(token: string) {
-  accessToken = token;
-  localStorage.setItem(TOKEN_KEY, token);
-  scheduleRefresh();
-}
+// URL 해시에서 토큰 추출 (Google 리다이렉트 후 호출)
+export function handleAuthRedirect(): boolean {
+  const hash = window.location.hash;
+  if (!hash || !hash.includes('access_token')) return false;
 
-// 50분 후 자동으로 토큰 갱신 (만료 전 갱신)
-function scheduleRefresh() {
-  if (refreshTimer) clearTimeout(refreshTimer);
-  refreshTimer = window.setTimeout(() => {
-    refreshToken();
-  }, 50 * 60 * 1000);
-}
-
-// 팝업 없이 토큰 갱신
-function refreshToken() {
-  if (!tokenClient) return;
-  tokenClient.requestAccessToken({ prompt: '' });
-}
-
-// 토큰 요청 (로그인) - 미리 생성된 tokenClient 재사용
-export function signIn(): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!tokenClient) {
-      reject(new Error('Google Auth not initialized'));
-      return;
-    }
-    pendingResolve = resolve;
-    pendingReject = reject;
-    tokenClient.requestAccessToken({ prompt: '' });
-  });
-}
-
-// 페이지 로드 시 저장된 토큰이 있으면 갱신 타이머 시작
-export function restoreSession() {
-  if (accessToken) {
-    scheduleRefresh();
+  const params = new URLSearchParams(hash.substring(1));
+  const token = params.get('access_token');
+  if (token) {
+    accessToken = token;
+    localStorage.setItem(TOKEN_KEY, token);
+    // URL 해시 정리 (토큰 노출 방지)
+    history.replaceState(null, '', window.location.pathname);
+    return true;
   }
+  return false;
 }
 
-// 로그인한 이메일 저장 (다음 로그인 시 계정 선택 건너뛰기용)
-export function saveLoginHint(email: string) {
-  localStorage.setItem(USER_EMAIL_KEY, email);
-}
-
-// 로그아웃 (토큰만 정리, 앱 권한은 유지하여 다음 로그인 시 동의 화면 생략)
+// 로그아웃 (토큰만 정리, 앱 권한은 유지)
 export function signOut() {
-  if (refreshTimer) clearTimeout(refreshTimer);
   accessToken = null;
   cachedFileId = null;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(FILE_ID_KEY);
-  // USER_EMAIL_KEY는 유지 (다음 로그인 시 계정 자동 선택용)
 }
 
 export function isSignedIn() {
   return !!accessToken;
 }
-
-// 파일 ID 캐시 (매번 검색 API 호출 방지) - localStorage에도 저장
-const FILE_ID_KEY = 'classroom-screen-file-id';
-let cachedFileId: string | null = localStorage.getItem(FILE_ID_KEY);
 
 // appDataFolder에서 파일 ID 찾기
 async function findFileId(useCache = true): Promise<string | null> {
@@ -146,14 +75,13 @@ export async function loadFromDrive(): Promise<CloudData | null> {
   if (!accessToken) return null;
 
   try {
-    // 캐시된 fileId로 먼저 시도 (API 호출 1회 절약)
+    // 캐시된 fileId로 먼저 시도
     if (cachedFileId) {
       const res = await fetch(
         `https://www.googleapis.com/drive/v3/files/${cachedFileId}?alt=media`,
         { headers: { Authorization: `Bearer ${accessToken}` } }
       );
       if (res.ok) return await res.json();
-      // 캐시 무효 → 다시 검색
       cachedFileId = null;
       localStorage.removeItem(FILE_ID_KEY);
     }
@@ -181,7 +109,6 @@ export async function saveToDrive(data: CloudData): Promise<boolean> {
     const body = JSON.stringify(data);
 
     if (fileId) {
-      // 기존 파일 업데이트
       const res = await fetch(
         `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
         {
@@ -195,7 +122,6 @@ export async function saveToDrive(data: CloudData): Promise<boolean> {
       );
       return res.ok;
     } else {
-      // 새 파일 생성
       const metadata = {
         name: FILE_NAME,
         parents: ['appDataFolder'],
