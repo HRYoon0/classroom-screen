@@ -5,7 +5,7 @@ import Toolbar from './components/Toolbar';
 import BackgroundPicker from './components/BackgroundPicker';
 import WidgetRenderer from './components/WidgetRenderer';
 import { BACKGROUNDS } from './constants';
-import { useCanvasScale, VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from './hooks/useCanvasScale';
+import { useCanvasScale, VIRTUAL_WIDTH } from './hooks/useCanvasScale';
 
 import {
   signIn,
@@ -30,7 +30,7 @@ function App() {
   const [background, setBackground] = useState(
     () => loadBackground() || BACKGROUNDS[0]
   );
-  const { scaleX, scaleY } = useCanvasScale();
+  const { scale, virtualHeight } = useCanvasScale();
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -297,22 +297,21 @@ function App() {
         </button>
       </div>
 
-      {/* 가상 캔버스 (1920x1080 → 뷰포트에 꽉 맞춤) */}
+      {/* 가상 캔버스 (너비 1920 고정, 높이는 뷰포트에 맞게 동적) */}
       <div
         className="absolute"
         style={{
           width: VIRTUAL_WIDTH,
-          height: VIRTUAL_HEIGHT,
+          height: virtualHeight,
           transformOrigin: 'top left',
-          transform: `scale(${scaleX}, ${scaleY})`,
+          transform: `scale(${scale})`,
         }}
       >
         {widgets.map((widget) => (
           <WidgetRenderer
             key={widget.id}
             widget={widget}
-            scaleX={scaleX}
-            scaleY={scaleY}
+            scale={scale}
             onUpdate={updateWidget}
             onRemove={removeWidget}
             onBringToFront={bringToFront}

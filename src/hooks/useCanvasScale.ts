@@ -1,18 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// 가상 캔버스 기준 크기
+// 가상 캔버스 기준 너비 (고정)
 export const VIRTUAL_WIDTH = 1920;
-export const VIRTUAL_HEIGHT = 1080;
 
 interface CanvasLayout {
-  scaleX: number;
-  scaleY: number;
+  scale: number;
+  virtualHeight: number;
 }
 
 function calcLayout(): CanvasLayout {
+  const scale = window.innerWidth / VIRTUAL_WIDTH;
   return {
-    scaleX: window.innerWidth / VIRTUAL_WIDTH,
-    scaleY: window.innerHeight / VIRTUAL_HEIGHT,
+    scale,
+    virtualHeight: window.innerHeight / scale,
   };
 }
 

@@ -4,8 +4,7 @@ import type { WidgetData } from '../types/widget';
 
 interface Props {
   widget: WidgetData;
-  scaleX: number;
-  scaleY: number;
+  scale: number;
   onUpdate: (id: string, data: Partial<WidgetData>) => void;
   onRemove: (id: string) => void;
   onBringToFront: (id: string) => void;
@@ -15,8 +14,7 @@ interface Props {
 
 export default function WidgetWrapper({
   widget,
-  scaleX,
-  scaleY,
+  scale,
   onUpdate,
   onRemove,
   onBringToFront,
@@ -48,8 +46,8 @@ export default function WidgetWrapper({
       const startY = widget.y;
 
       const handleMove = (ev: MouseEvent) => {
-        const dx = (ev.clientX - startMouseX) / scaleX;
-        const dy = (ev.clientY - startMouseY) / scaleY;
+        const dx = (ev.clientX - startMouseX) / scale;
+        const dy = (ev.clientY - startMouseY) / scale;
         onUpdate(widget.id, {
           x: startX + dx,
           y: startY + dy,
@@ -65,7 +63,7 @@ export default function WidgetWrapper({
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [widget.id, widget.x, widget.y, scaleX, scaleY, onUpdate, onBringToFront]
+    [widget.id, widget.x, widget.y, scale, onUpdate, onBringToFront]
   );
 
   // 리사이즈 (마우스 이동량을 가상 좌표로 변환)
@@ -83,8 +81,8 @@ export default function WidgetWrapper({
       const startY = widget.y;
 
       const handleMove = (ev: MouseEvent) => {
-        const dx = (ev.clientX - startMouseX) / scaleX;
-        const dy = (ev.clientY - startMouseY) / scaleY;
+        const dx = (ev.clientX - startMouseX) / scale;
+        const dy = (ev.clientY - startMouseY) / scale;
 
         let newX = startX;
         let newY = startY;
@@ -124,7 +122,7 @@ export default function WidgetWrapper({
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [widget.id, widget.x, widget.y, widget.w, widget.h, scaleX, scaleY, onUpdate, onBringToFront]
+    [widget.id, widget.x, widget.y, widget.w, widget.h, scale, onUpdate, onBringToFront]
   );
 
   const handleClickOutside = useCallback(() => {
