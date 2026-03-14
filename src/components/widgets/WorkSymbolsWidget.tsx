@@ -160,17 +160,12 @@ export default function WorkSymbolsWidget() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [showPicker, setShowPicker] = useState(false);
 
-  const handleClick = useCallback(() => {
-    setShowPicker(true);
-  }, []);
-
-  const handleRelease = useCallback(() => {
-    setShowPicker(false);
+  const handleTogglePicker = useCallback(() => {
+    setShowPicker((prev) => !prev);
   }, []);
 
   const handleSelect = useCallback((idx: number) => {
     setActiveIdx(idx);
-    setShowPicker(false);
   }, []);
 
   const active = SYMBOLS[activeIdx];
@@ -187,9 +182,7 @@ export default function WorkSymbolsWidget() {
         cursor: 'pointer',
         userSelect: 'none',
       }}
-      onMouseDown={handleClick}
-      onMouseUp={handleRelease}
-      onMouseLeave={handleRelease}
+      onClick={handleTogglePicker}
     >
       {/* 메인 원형 아이콘 */}
       <div style={{
@@ -231,7 +224,7 @@ export default function WorkSymbolsWidget() {
           {SYMBOLS.map((sym, i) => (
             <button
               key={sym.id}
-              onMouseEnter={() => handleSelect(i)}
+              onClick={(e) => { e.stopPropagation(); handleSelect(i); }}
               style={{
                 width: '48px',
                 height: '48px',
