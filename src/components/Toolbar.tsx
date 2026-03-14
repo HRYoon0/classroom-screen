@@ -14,6 +14,7 @@ import {
   IoQrCodeOutline,
   IoDiceOutline,
   IoListOutline,
+  IoCalendarOutline,
   IoAppsOutline,
   IoChevronDown,
 } from 'react-icons/io5';
@@ -49,6 +50,7 @@ const EXTRA_ITEMS: typeof MAIN_ITEMS = [
   { type: 'drawing',        icon: <IoBrushOutline size={SZ} />,         color: '#ec4899', label: '그림판' },
   { type: 'qr-code',        icon: <IoQrCodeOutline size={SZ} />,        color: '#6366f1', label: 'QR 코드' },
   { type: 'dice',           icon: <IoDiceOutline size={SZ} />,          color: '#8b5cf6', label: '주사위' },
+  { type: 'calendar',       icon: <IoCalendarOutline size={SZ} />,      color: '#0ea5e9', label: '달력' },
 ];
 
 interface Props {

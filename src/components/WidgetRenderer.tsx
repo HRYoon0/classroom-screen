@@ -17,6 +17,7 @@ import DrawingWidget from './widgets/DrawingWidget';
 import QRCodeWidget from './widgets/QRCodeWidget';
 import DiceWidget from './widgets/DiceWidget';
 import WorkSymbolsWidget from './widgets/WorkSymbolsWidget';
+import CalendarWidget from './widgets/CalendarWidget';
 
 interface Props {
   widget: WidgetData;
@@ -63,6 +64,8 @@ function renderWidgetContent(
       return <DiceWidget />;
     case 'work-symbols':
       return <WorkSymbolsWidget isSelected={isSelected} />;
+    case 'calendar':
+      return <CalendarWidget />;
     default:
       return <div className="text-slate-400 text-sm">알 수 없는 위젯</div>;
   }
