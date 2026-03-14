@@ -9,8 +9,8 @@ interface Props {
 
 export default function BackgroundPicker({ current, onChange, onClose }: Props) {
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl max-h-[80vh] overflow-auto" style={{ padding: '32px', width: '420px' }}>
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl max-h-[80vh] overflow-auto" style={{ padding: '32px', width: '420px' }} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-800">배경 설정</h2>
           <button
