@@ -243,63 +243,74 @@ function CatClock({ hourAngle, minuteAngle, secondAngle, digitalTime, ampm }: An
   );
 }
 
-// 꽃 시계 스타일
+// 꽃 시계 스타일 - 12시 위치마다 작은 꽃
 function FlowerClock({ hourAngle, minuteAngle, secondAngle, digitalTime, ampm }: AnalogProps) {
-  const size = 200;
+  const size = 210;
   const c = size / 2;
-  const r = 70;
+  const r = 76;
 
-  // 꽃잎 색상들
-  const petalColors = ['#f9a8d4', '#c4b5fd', '#93c5fd', '#86efac', '#fde68a', '#fca5a5', '#d8b4fe', '#a5f3fc'];
+  const flowerColors = [
+    { petal: '#f9a8d4', center: '#fbbf24' },
+    { petal: '#c4b5fd', center: '#fbbf24' },
+    { petal: '#93c5fd', center: '#fde68a' },
+    { petal: '#86efac', center: '#fbbf24' },
+    { petal: '#fca5a5', center: '#fde68a' },
+    { petal: '#a78bfa', center: '#fbbf24' },
+    { petal: '#f9a8d4', center: '#fde68a' },
+    { petal: '#7dd3fc', center: '#fbbf24' },
+    { petal: '#d8b4fe', center: '#fde68a' },
+    { petal: '#fda4af', center: '#fbbf24' },
+    { petal: '#86efac', center: '#fde68a' },
+    { petal: '#f9a8d4', center: '#fbbf24' },
+  ];
+
+  // 작은 꽃 하나 렌더링 (꽃잎 5장 + 중심)
+  function renderFlower(fx: number, fy: number, petalColor: string, centerColor: string, petalSize: number) {
+    const petals = [];
+    for (let p = 0; p < 5; p++) {
+      const pa = (p * 72 - 90) * (Math.PI / 180);
+      const px = fx + petalSize * 0.7 * Math.cos(pa);
+      const py = fy + petalSize * 0.7 * Math.sin(pa);
+      petals.push(
+        <circle key={p} cx={px} cy={py} r={petalSize} fill={petalColor} opacity="0.8" />
+      );
+    }
+    return (
+      <g>
+        {petals}
+        <circle cx={fx} cy={fy} r={petalSize * 0.55} fill={centerColor} />
+      </g>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '2px' }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* 꽃잎 (12개) */}
+        {/* 시계 배경 원 */}
+        <circle cx={c} cy={c} r={r - 10} fill="white" fillOpacity="0.9" />
+        <circle cx={c} cy={c} r={r - 10} fill="none" stroke="#e9d5ff" strokeWidth="1.5" />
+
+        {/* 12개 꽃 (시계 눈금 위치) */}
         {Array.from({ length: 12 }).map((_, i) => {
           const angle = (i * 30 - 90) * (Math.PI / 180);
-          const px = c + (r + 6) * Math.cos(angle);
-          const py = c + (r + 6) * Math.sin(angle);
-          return (
-            <ellipse key={i}
-              cx={px} cy={py} rx="16" ry="10"
-              fill={petalColors[i % petalColors.length]}
-              opacity="0.7"
-              transform={`rotate(${i * 30} ${px} ${py})`}
-            />
-          );
+          const fx = c + (r + 2) * Math.cos(angle);
+          const fy = c + (r + 2) * Math.sin(angle);
+          const fc = flowerColors[i];
+          return <g key={i}>{renderFlower(fx, fy, fc.petal, fc.center, 7)}</g>;
         })}
-
-        {/* 시계 원 */}
-        <circle cx={c} cy={c} r={r - 6} fill="white" />
-        <circle cx={c} cy={c} r={r - 6} fill="none" stroke="#e9d5ff" strokeWidth="2" />
 
         {/* 숫자 */}
         {Array.from({ length: 12 }).map((_, i) => {
           const angle = ((i + 1) * 30 - 90) * (Math.PI / 180);
-          const nr = r - 22;
+          const nr = r - 24;
           return (
             <text key={i}
               x={c + nr * Math.cos(angle)} y={c + nr * Math.sin(angle)}
               textAnchor="middle" dominantBaseline="central"
-              fill="#7c3aed" fontSize="13" fontWeight="600"
+              fill="#7c3aed" fontSize="13" fontWeight="700"
             >
               {i + 1}
             </text>
-          );
-        })}
-
-        {/* 눈금 */}
-        {Array.from({ length: 12 }).map((_, i) => {
-          const angle = (i * 30 - 90) * (Math.PI / 180);
-          const r1 = r - 8;
-          const r2 = r - 13;
-          return (
-            <line key={`t${i}`}
-              x1={c + r1 * Math.cos(angle)} y1={c + r1 * Math.sin(angle)}
-              x2={c + r2 * Math.cos(angle)} y2={c + r2 * Math.sin(angle)}
-              stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round"
-            />
           );
         })}
 
@@ -307,15 +318,14 @@ function FlowerClock({ hourAngle, minuteAngle, secondAngle, digitalTime, ampm }:
         <line x1={c} y1={c} x2={c + 30 * Math.sin(hourAngle * Math.PI / 180)} y2={c - 30 * Math.cos(hourAngle * Math.PI / 180)}
           stroke="#7c3aed" strokeWidth="3.5" strokeLinecap="round" />
         {/* 분침 */}
-        <line x1={c} y1={c} x2={c + 44 * Math.sin(minuteAngle * Math.PI / 180)} y2={c - 44 * Math.cos(minuteAngle * Math.PI / 180)}
+        <line x1={c} y1={c} x2={c + 46 * Math.sin(minuteAngle * Math.PI / 180)} y2={c - 46 * Math.cos(minuteAngle * Math.PI / 180)}
           stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" />
         {/* 초침 */}
-        <line x1={c} y1={c} x2={c + 48 * Math.sin(secondAngle * Math.PI / 180)} y2={c - 48 * Math.cos(secondAngle * Math.PI / 180)}
+        <line x1={c} y1={c} x2={c + 50 * Math.sin(secondAngle * Math.PI / 180)} y2={c - 50 * Math.cos(secondAngle * Math.PI / 180)}
           stroke="#f472b6" strokeWidth="1.2" strokeLinecap="round" />
 
         {/* 중심 꽃 */}
-        <circle cx={c} cy={c} r="6" fill="#fbbf24" />
-        <circle cx={c} cy={c} r="3" fill="#f59e0b" />
+        {renderFlower(c, c, '#f9a8d4', '#fbbf24', 5)}
       </svg>
       <div style={{ fontSize: '16px', fontWeight: 700, color: '#7c3aed', fontVariantNumeric: 'tabular-nums' }}>
         {ampm && <span style={{ marginRight: '4px' }}>{ampm}</span>}
