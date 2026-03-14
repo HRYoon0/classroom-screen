@@ -41,13 +41,24 @@ export default function PollWidget({ config, onConfigChange }: Props) {
   // ── 설정 화면 ──
   if (showSetup) {
     return (
-      <div className="flex flex-col h-full">
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* 질문 입력 */}
-        <div className="mb-4">
-          <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1 block">질문</label>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '6px' }}>질문</label>
           <input
             type="text"
-            className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-2xl text-base font-semibold focus:outline-none focus:border-indigo-400 focus:bg-white text-slate-800 placeholder:text-slate-300 transition-colors"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              border: '2px solid #e2e8f0',
+              borderRadius: '10px',
+              fontSize: '18px',
+              fontWeight: 600,
+              outline: 'none',
+              color: '#1e293b',
+              background: '#f8fafc',
+              boxSizing: 'border-box',
+            }}
             placeholder="오늘 점심 뭐 먹을까?"
             value={question}
             onChange={(e) => onConfigChange({ question: e.target.value })}
@@ -55,19 +66,25 @@ export default function PollWidget({ config, onConfigChange }: Props) {
         </div>
 
         {/* 선택지 */}
-        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2 block">선택지</label>
-        <div className="flex-1 flex flex-col gap-2 overflow-auto">
+        <label style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', display: 'block', marginBottom: '8px' }}>선택지</label>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
           {options.map((opt, i) => {
             const c = COLORS[i % COLORS.length];
             return (
-              <div key={i} className="flex items-center gap-2">
-                <div
-                  className="w-4 h-4 rounded-full shrink-0 shadow-sm"
-                  style={{ backgroundColor: c.bar }}
-                />
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '14px', height: '14px', borderRadius: '50%', backgroundColor: c.bar, flexShrink: 0 }} />
                 <input
                   type="text"
-                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:bg-white text-slate-700 placeholder:text-slate-300 transition-colors"
+                  style={{
+                    flex: 1,
+                    padding: '10px 14px',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    fontSize: '16px',
+                    outline: 'none',
+                    color: '#334155',
+                    background: '#f8fafc',
+                  }}
                   placeholder={`선택지 ${i + 1}`}
                   value={opt}
                   onChange={(e) => {
@@ -82,7 +99,19 @@ export default function PollWidget({ config, onConfigChange }: Props) {
                       const newOpts = options.filter((_, j) => j !== i);
                       onConfigChange({ options: newOpts, votes: newOpts.map(() => 0) });
                     }}
-                    className="w-7 h-7 flex items-center justify-center rounded-full text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors text-sm"
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: 'none',
+                      cursor: 'pointer',
+                      fontSize: '16px',
+                      color: '#cbd5e1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
                   >
                     ✕
                   </button>
@@ -98,7 +127,16 @@ export default function PollWidget({ config, onConfigChange }: Props) {
                   votes: [...votes, 0],
                 })
               }
-              className="flex items-center justify-center gap-1 py-2 rounded-xl border-2 border-dashed border-slate-200 text-sm text-indigo-500 hover:border-indigo-300 hover:bg-indigo-50/50 font-medium transition-colors"
+              style={{
+                padding: '10px',
+                borderRadius: '10px',
+                border: '2px dashed #e2e8f0',
+                background: 'none',
+                cursor: 'pointer',
+                fontSize: '15px',
+                color: '#6366f1',
+                fontWeight: 500,
+              }}
             >
               + 선택지 추가
             </button>
@@ -108,8 +146,18 @@ export default function PollWidget({ config, onConfigChange }: Props) {
         {/* 시작 버튼 */}
         <button
           onClick={() => question && options.some(o => o.trim()) && setShowSetup(false)}
-          className="mt-4 h-9 px-4 bg-indigo-500 text-white rounded text-[13px] font-semibold hover:bg-indigo-600 disabled:opacity-40 transition-colors shadow-sm"
           disabled={!question || !options.some(o => o.trim())}
+          style={{
+            marginTop: '16px',
+            padding: '12px',
+            borderRadius: '10px',
+            border: 'none',
+            background: (!question || !options.some(o => o.trim())) ? '#cbd5e1' : '#6366f1',
+            color: 'white',
+            fontSize: '16px',
+            fontWeight: 600,
+            cursor: (!question || !options.some(o => o.trim())) ? 'default' : 'pointer',
+          }}
         >
           투표 시작
         </button>
@@ -119,12 +167,12 @@ export default function PollWidget({ config, onConfigChange }: Props) {
 
   // ── 투표 화면 ──
   return (
-    <div className="flex flex-col h-full">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* 질문 */}
-      <h3 className="text-lg font-bold text-slate-800 mb-4 leading-snug">{question}</h3>
+      <h3 style={{ fontSize: '24px', fontWeight: 700, color: '#1e293b', marginBottom: '16px', lineHeight: 1.3, margin: '0 0 16px' }}>{question}</h3>
 
       {/* 선택지 + 바 */}
-      <div className="flex-1 flex flex-col gap-2.5 overflow-auto">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
         {options.map((opt, i) => {
           const pct = totalVotes > 0 ? (votes[i] / totalVotes) * 100 : 0;
           const barWidth = totalVotes > 0 ? (votes[i] / maxVotes) * 100 : 0;
@@ -135,31 +183,39 @@ export default function PollWidget({ config, onConfigChange }: Props) {
               key={i}
               onClick={() => vote(i)}
               disabled={isLocked}
-              className={`relative text-left rounded-2xl overflow-hidden transition-all border-2 ${
-                isLocked
-                  ? 'cursor-default border-transparent'
-                  : 'hover:shadow-md active:scale-[0.98] border-transparent hover:border-slate-200'
-              }`}
-              style={{ backgroundColor: c.light }}
+              style={{
+                position: 'relative',
+                textAlign: 'left',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '2px solid transparent',
+                backgroundColor: c.light,
+                cursor: isLocked ? 'default' : 'pointer',
+                padding: 0,
+                transition: 'all 0.15s',
+              }}
             >
               {/* 바 배경 */}
               {showResults && (
-                <div
-                  className="absolute inset-y-0 left-0 transition-all duration-700 ease-out opacity-25"
-                  style={{ width: `${barWidth}%`, backgroundColor: c.bar }}
-                />
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  bottom: 0,
+                  width: `${barWidth}%`,
+                  backgroundColor: c.bar,
+                  opacity: 0.25,
+                  transition: 'width 0.7s ease-out',
+                }} />
               )}
-              <div className="relative px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div
-                    className="w-3 h-3 rounded-full shrink-0"
-                    style={{ backgroundColor: c.bar }}
-                  />
-                  <span className="text-sm font-semibold text-slate-700">{opt || `선택지 ${i + 1}`}</span>
+              <div style={{ position: 'relative', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: c.bar, flexShrink: 0 }} />
+                  <span style={{ fontSize: '18px', fontWeight: 600, color: '#334155' }}>{opt || `선택지 ${i + 1}`}</span>
                 </div>
                 {showResults && (
-                  <span className="text-sm font-bold tabular-nums" style={{ color: c.text }}>
-                    {votes[i]} <span className="text-xs font-medium opacity-60">({Math.round(pct)}%)</span>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: c.text, fontVariantNumeric: 'tabular-nums' }}>
+                    {votes[i]} <span style={{ fontSize: '13px', fontWeight: 500, opacity: 0.6 }}>({Math.round(pct)}%)</span>
                   </span>
                 )}
               </div>
@@ -169,22 +225,22 @@ export default function PollWidget({ config, onConfigChange }: Props) {
       </div>
 
       {/* 하단 컨트롤 */}
-      <div className="flex items-center gap-1 mt-3 pt-3 border-t border-slate-100">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
         <ControlBtn
-          icon={showResults ? <IoEye size={14} /> : <IoEyeOff size={14} />}
+          icon={showResults ? <IoEye size={16} /> : <IoEyeOff size={16} />}
           label={showResults ? '숨기기' : '보기'}
           onClick={() => setShowResults(!showResults)}
         />
         <ControlBtn
-          icon={isLocked ? <IoLockClosed size={14} /> : <IoLockOpen size={14} />}
+          icon={isLocked ? <IoLockClosed size={16} /> : <IoLockOpen size={16} />}
           label={isLocked ? '잠금됨' : '잠금'}
           onClick={() => setIsLocked(!isLocked)}
           active={isLocked}
         />
-        <div className="flex-1" />
-        <ControlBtn icon={<IoRefresh size={14} />} label="초기화" onClick={reset} />
-        <ControlBtn icon={<IoCreate size={14} />} label="수정" onClick={() => setShowSetup(true)} />
-        <span className="text-xs text-slate-400 tabular-nums font-medium ml-1">
+        <div style={{ flex: 1 }} />
+        <ControlBtn icon={<IoRefresh size={16} />} label="초기화" onClick={reset} />
+        <ControlBtn icon={<IoCreate size={16} />} label="수정" onClick={() => setShowSetup(true)} />
+        <span style={{ fontSize: '14px', color: '#94a3b8', fontVariantNumeric: 'tabular-nums', fontWeight: 500, marginLeft: '4px' }}>
           총 {totalVotes}표
         </span>
       </div>
@@ -206,11 +262,20 @@ function ControlBtn({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
-        active
-          ? 'text-red-500 bg-red-50 hover:bg-red-100'
-          : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-      }`}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        padding: '6px 10px',
+        borderRadius: '8px',
+        border: 'none',
+        background: active ? '#fef2f2' : 'none',
+        cursor: 'pointer',
+        fontSize: '13px',
+        fontWeight: 500,
+        color: active ? '#ef4444' : '#94a3b8',
+        transition: 'all 0.15s',
+      }}
     >
       {icon}
       {label}
