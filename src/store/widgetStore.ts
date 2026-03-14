@@ -78,7 +78,7 @@ const CONFIG_MEMORY_KEY = 'classboard-widget-configs';
 const POSITION_MEMORY_KEY = 'classboard-widget-positions';
 
 // config 저장 시 초기화해야 하는 위젯 타입 (재추가 시 빈 config)
-const RESET_ON_ADD: Set<WidgetType> = new Set(['poll']);
+const RESET_ON_ADD: Set<WidgetType> = new Set(['poll', 'text']);
 
 function saveWidgetConfig(type: WidgetType, config: Record<string, unknown>) {
   if (RESET_ON_ADD.has(type)) return; // 투표 등은 config 저장 안 함
