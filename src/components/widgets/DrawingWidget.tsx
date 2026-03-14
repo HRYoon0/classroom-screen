@@ -113,7 +113,16 @@ export default function DrawingWidget() {
         />
         <button
           onClick={clear}
-          className="ml-auto px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200"
+          style={{
+            marginLeft: 'auto',
+            padding: '4px 12px',
+            background: '#f1f5f9',
+            color: '#475569',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '12px',
+            cursor: 'pointer',
+          }}
         >
           지우기
         </button>
