@@ -1,6 +1,8 @@
 declare namespace google.accounts.oauth2 {
   interface TokenClient {
     requestAccessToken(overrideConfig?: { prompt?: string }): void;
+    callback: (response: TokenResponse) => void;
+    error_callback?: (error: { type: string; message: string }) => void;
   }
 
   interface TokenResponse {
