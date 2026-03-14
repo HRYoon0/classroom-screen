@@ -81,6 +81,8 @@ export default function DiceWidget() {
 
   const getDiceStyle = (index: number): React.CSSProperties => {
     const xOff = (index - (diceCount - 1) / 2) * 8;
+    const rotDir = index % 2 === 0 ? 1 : -1;
+    const rotAmount = 8 + (index * 5) % 7;
 
     switch (phase) {
       case 'up':
@@ -91,48 +93,48 @@ export default function DiceWidget() {
         };
       case 'down':
         return {
-          transform: `translateY(0px) translateX(${xOff}px) scale(1.08)`,
+          transform: `translateY(0px) translateX(${xOff}px) rotate(${rotDir * rotAmount}deg) scale(1.08)`,
           opacity: 1,
           transition: 'transform 0.25s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.1s',
         };
       case 'b1':
         return {
-          transform: `translateY(-80px) translateX(${xOff}px) scale(1)`,
+          transform: `translateY(-80px) translateX(${xOff}px) rotate(${rotDir * -rotAmount * 0.6}deg) scale(1)`,
           transition: 'transform 0.15s cubic-bezier(0.33, 1, 0.68, 1)',
         };
       case 'b1down':
         return {
-          transform: `translateY(0px) translateX(${xOff}px) scale(1.04)`,
+          transform: `translateY(0px) translateX(${xOff}px) rotate(${rotDir * rotAmount * 0.4}deg) scale(1.04)`,
           transition: 'transform 0.12s cubic-bezier(0.55, 0, 1, 0.45)',
         };
       case 'b2':
         return {
-          transform: `translateY(-35px) translateX(${xOff}px) scale(1)`,
+          transform: `translateY(-35px) translateX(${xOff}px) rotate(${rotDir * -rotAmount * 0.2}deg) scale(1)`,
           transition: 'transform 0.1s cubic-bezier(0.33, 1, 0.68, 1)',
         };
       case 'b2down':
         return {
-          transform: `translateY(0px) translateX(${xOff}px) scale(1.02)`,
+          transform: `translateY(0px) translateX(${xOff}px) rotate(${rotDir * rotAmount * 0.1}deg) scale(1.02)`,
           transition: 'transform 0.08s cubic-bezier(0.55, 0, 1, 0.45)',
         };
       case 'b3':
         return {
-          transform: `translateY(-10px) translateX(${xOff}px) scale(1)`,
+          transform: `translateY(-10px) translateX(${xOff}px) rotate(0deg) scale(1)`,
           transition: 'transform 0.08s cubic-bezier(0.33, 1, 0.68, 1)',
         };
       case 'settle':
         return {
-          transform: `translateY(0) translateX(${xOff * 0.5}px) scale(1)`,
+          transform: `translateY(0) translateX(${xOff * 0.5}px) rotate(0deg) scale(1)`,
           transition: 'transform 0.15s ease-out',
         };
       case 'done':
         return {
-          transform: 'translateY(0) scale(1)',
+          transform: 'translateY(0) rotate(0deg) scale(1)',
           transition: 'transform 0.2s ease',
         };
       default:
         return {
-          transform: 'translateY(0) scale(1)',
+          transform: 'translateY(0) rotate(0deg) scale(1)',
           transition: 'transform 0.3s ease',
         };
     }
