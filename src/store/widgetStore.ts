@@ -20,6 +20,7 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
   switch (action.type) {
     case 'ADD': {
       const meta = WIDGET_META[action.widgetType];
+      const savedConfig = loadWidgetConfig(action.widgetType);
       const newWidget: WidgetData = {
         id: uuid(),
         type: action.widgetType,
@@ -28,22 +29,31 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
         w: meta.defaultW,
         h: meta.defaultH,
         zIndex: getMaxZ(state) + 1,
-        config: {},
+        config: savedConfig,
       };
       return [...state, newWidget];
     }
-    case 'REMOVE':
+    case 'REMOVE': {
+      const removing = state.find((w) => w.id === action.id);
+      if (removing && Object.keys(removing.config).length > 0) {
+        saveWidgetConfig(removing.type, removing.config);
+      }
       return state.filter((w) => w.id !== action.id);
+    }
     case 'UPDATE':
       return state.map((w) =>
         w.id === action.id ? { ...w, ...action.data } : w
       );
-    case 'UPDATE_CONFIG':
-      return state.map((w) =>
+    case 'UPDATE_CONFIG': {
+      const updated = state.map((w) =>
         w.id === action.id
           ? { ...w, config: { ...w.config, ...action.config } }
           : w
       );
+      const target = updated.find((w) => w.id === action.id);
+      if (target) saveWidgetConfig(target.type, target.config);
+      return updated;
+    }
     case 'BRING_TO_FRONT': {
       const maxZ = getMaxZ(state);
       const target = state.find((w) => w.id === action.id);
@@ -56,6 +66,29 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
       return action.widgets;
     default:
       return state;
+  }
+}
+
+// 위젯 타입별 마지막 설정 저장/복원
+const CONFIG_MEMORY_KEY = 'classboard-widget-configs';
+
+function saveWidgetConfig(type: WidgetType, config: Record<string, unknown>) {
+  try {
+    const raw = localStorage.getItem(CONFIG_MEMORY_KEY);
+    const all = raw ? JSON.parse(raw) : {};
+    all[type] = config;
+    localStorage.setItem(CONFIG_MEMORY_KEY, JSON.stringify(all));
+  } catch { /* 무시 */ }
+}
+
+function loadWidgetConfig(type: WidgetType): Record<string, unknown> {
+  try {
+    const raw = localStorage.getItem(CONFIG_MEMORY_KEY);
+    if (!raw) return {};
+    const all = JSON.parse(raw);
+    return all[type] || {};
+  } catch {
+    return {};
   }
 }
 
