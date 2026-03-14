@@ -26,6 +26,8 @@ interface Props {
   onRemove: (id: string) => void;
   onBringToFront: (id: string) => void;
   onConfigChange: (id: string, config: Record<string, unknown>) => void;
+  isSelected: boolean;
+  onSelect: (id: string | null) => void;
 }
 
 function renderWidgetContent(
@@ -73,6 +75,8 @@ export default function WidgetRenderer({
   onRemove,
   onBringToFront,
   onConfigChange,
+  isSelected,
+  onSelect,
 }: Props) {
   const meta = WIDGET_META[widget.type];
   const configHandler = (config: Record<string, unknown>) => onConfigChange(widget.id, config);
@@ -98,6 +102,8 @@ export default function WidgetRenderer({
       onBringToFront={onBringToFront}
       title={`${meta.icon} ${meta.label}`}
       settingsPanel={getSettingsPanel()}
+      isSelected={isSelected}
+      onSelect={onSelect}
     >
       {renderWidgetContent(widget, configHandler)}
     </WidgetWrapper>

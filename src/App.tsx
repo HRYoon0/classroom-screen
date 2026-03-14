@@ -34,6 +34,7 @@ function App() {
   const { scaleX, scaleY, scaleSize } = useCanvasScale();
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
 
   // 구글 드라이브 관련 상태
   const [user, setUser] = useState<{ name: string; email: string; picture: string } | null>(null);
@@ -198,7 +199,7 @@ function App() {
       : { backgroundColor: background };
 
   return (
-    <div className="w-full h-full relative overflow-hidden" style={bgStyle}>
+    <div className="w-full h-full relative overflow-hidden" style={bgStyle} onMouseDown={() => setSelectedWidgetId(null)}>
       {/* 로그인 로딩 오버레이 */}
       {loginLoading && (
         <div className="absolute inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -310,6 +311,8 @@ function App() {
           onRemove={removeWidget}
           onBringToFront={bringToFront}
           onConfigChange={updateConfig}
+          isSelected={selectedWidgetId === widget.id}
+          onSelect={setSelectedWidgetId}
         />
       ))}
 

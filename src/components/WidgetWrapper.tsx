@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, type ReactNode } from 'react';
+import { useRef, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { IoClose, IoSettings } from 'react-icons/io5';
 import type { WidgetData } from '../types/widget';
 
@@ -13,6 +13,8 @@ interface Props {
   children: ReactNode;
   title?: string;
   settingsPanel?: ReactNode;
+  isSelected: boolean;
+  onSelect: (id: string | null) => void;
 }
 
 export default function WidgetWrapper({
@@ -26,12 +28,18 @@ export default function WidgetWrapper({
   children,
   title: _title,
   settingsPanel,
+  isSelected,
+  onSelect,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isSelected, setIsSelected] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+
+  // 선택 해제 시 설정 패널도 닫기
+  useEffect(() => {
+    if (!isSelected) setShowSettings(false);
+  }, [isSelected]);
 
   // 드래그
   const handleDragStart = useCallback(
@@ -45,7 +53,7 @@ export default function WidgetWrapper({
       e.stopPropagation();
       onBringToFront(widget.id);
       setIsDragging(true);
-      setIsSelected(true);
+      onSelect(widget.id);
 
       const startMouseX = e.clientX;
       const startMouseY = e.clientY;
@@ -68,7 +76,7 @@ export default function WidgetWrapper({
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [widget.id, widget.x, widget.y, scaleX, scaleY, onUpdate, onBringToFront]
+    [widget.id, widget.x, widget.y, scaleX, scaleY, onUpdate, onBringToFront, onSelect]
   );
 
   // 리사이즈
@@ -129,120 +137,105 @@ export default function WidgetWrapper({
     [widget.id, widget.x, widget.y, widget.w, widget.h, scaleSize, onUpdate, onBringToFront]
   );
 
-  const handleClickOutside = useCallback(() => {
-    setIsSelected(false);
-  }, []);
-
   return (
-    <>
+    <div
+      ref={containerRef}
+      className="absolute flex flex-col select-none group"
+      style={{
+        left: 0,
+        top: 0,
+        width: widget.w,
+        height: widget.h * (scaleY / scaleX),
+        zIndex: widget.zIndex,
+        transformOrigin: 'left top',
+        transform: `translateX(${widget.x * scaleX}px) translateY(${widget.y * scaleY}px) scale(${scaleSize})`,
+        cursor: isDragging ? 'grabbing' : 'default',
+      }}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+        onBringToFront(widget.id);
+        onSelect(widget.id);
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* 선택 시 파란 테두리 + 리사이즈 핸들 */}
       {isSelected && (
-        <div
-          className="fixed inset-0"
-          style={{ zIndex: widget.zIndex - 1 }}
-          onMouseDown={handleClickOutside}
-        />
+        <>
+          <div className="absolute inset-0 border-2 border-indigo-400 rounded-2xl pointer-events-none" style={{ margin: -2 }} />
+          {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map((corner) => (
+            <div
+              key={corner}
+              className={`absolute w-3.5 h-3.5 bg-white border-2 border-indigo-400 rounded-full cursor-se-resize z-10 ${
+                corner === 'top-left' ? '-top-1.5 -left-1.5 cursor-nw-resize' :
+                corner === 'top-right' ? '-top-1.5 -right-1.5 cursor-ne-resize' :
+                corner === 'bottom-left' ? '-bottom-1.5 -left-1.5 cursor-sw-resize' :
+                '-bottom-1.5 -right-1.5 cursor-se-resize'
+              }`}
+              onMouseDown={(e) => handleResize(e, corner)}
+            />
+          ))}
+        </>
       )}
 
+      {/* 위젯 본체 */}
       <div
-        ref={containerRef}
-        className="absolute flex flex-col select-none group"
-        style={{
-          left: 0,
-          top: 0,
-          width: widget.w,
-          height: widget.h * (scaleY / scaleX),
-          zIndex: widget.zIndex,
-          transformOrigin: 'left top',
-          transform: `translateX(${widget.x * scaleX}px) translateY(${widget.y * scaleY}px) scale(${scaleSize})`,
-          cursor: isDragging ? 'grabbing' : 'default',
-        }}
-        onMouseDown={() => {
-          if (!isSelected) {
-            onBringToFront(widget.id);
-            setIsSelected(true);
-          }
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className="widget-card flex flex-col h-full w-full overflow-hidden cursor-grab active:cursor-grabbing [&_[contenteditable]]:cursor-text"
+        onMouseDown={handleDragStart}
       >
-        {/* 선택 시 파란 테두리 + 리사이즈 핸들 */}
-        {isSelected && (
-          <>
-            <div className="absolute inset-0 border-2 border-indigo-400 rounded-2xl pointer-events-none" style={{ margin: -2 }} />
-            {['top-left', 'top-right', 'bottom-left', 'bottom-right'].map((corner) => (
-              <div
-                key={corner}
-                className={`absolute w-3.5 h-3.5 bg-white border-2 border-indigo-400 rounded-full cursor-se-resize z-10 ${
-                  corner === 'top-left' ? '-top-1.5 -left-1.5 cursor-nw-resize' :
-                  corner === 'top-right' ? '-top-1.5 -right-1.5 cursor-ne-resize' :
-                  corner === 'bottom-left' ? '-bottom-1.5 -left-1.5 cursor-sw-resize' :
-                  '-bottom-1.5 -right-1.5 cursor-se-resize'
-                }`}
-                onMouseDown={(e) => handleResize(e, corner)}
-              />
-            ))}
-          </>
-        )}
-
-        {/* 위젯 본체 */}
-        <div
-          className="widget-card flex flex-col h-full w-full overflow-hidden cursor-grab active:cursor-grabbing [&_[contenteditable]]:cursor-text"
-          onMouseDown={handleDragStart}
-        >
-          <div className="flex-1 overflow-hidden min-h-0" style={{ padding: 24 }}>{children}</div>
-        </div>
-
-        {/* 플로팅 툴바 (삭제 + 설정) */}
-        {(isHovered || isSelected) && (
-          <div
-            className="absolute left-1/2 flex items-center bg-white/95 backdrop-blur-sm shadow-lg border border-slate-200/60"
-            style={{ transform: 'translateX(-50%)', top: '-52px', gap: '4px', borderRadius: '12px', padding: '6px 8px' }}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => onRemove(widget.id)}
-              className="rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
-              style={{ padding: '8px' }}
-              title="삭제"
-            >
-              <IoClose size={28} />
-            </button>
-            {settingsPanel && (
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-500 transition-colors"
-                style={{ padding: '8px', color: showSettings ? '#6366f1' : undefined }}
-                title="설정"
-              >
-                <IoSettings size={28} />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* 설정 패널 */}
-        {showSettings && settingsPanel && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '-12px',
-              left: '50%',
-              transform: 'translateX(-50%) translateY(-100%)',
-              background: 'white',
-              borderRadius: '12px',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
-              border: '1px solid #e2e8f0',
-              padding: '12px',
-              zIndex: 100,
-              minWidth: '220px',
-              maxWidth: '320px',
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            {settingsPanel}
-          </div>
-        )}
+        <div className="flex-1 overflow-hidden min-h-0" style={{ padding: 24 }}>{children}</div>
       </div>
-    </>
+
+      {/* 플로팅 툴바 (삭제 + 설정) */}
+      {(isHovered || isSelected) && (
+        <div
+          className="absolute left-1/2 flex items-center bg-white/95 backdrop-blur-sm shadow-lg border border-slate-200/60"
+          style={{ transform: 'translateX(-50%)', top: '-52px', gap: '4px', borderRadius: '12px', padding: '6px 8px' }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={() => onRemove(widget.id)}
+            className="rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+            style={{ padding: '8px' }}
+            title="삭제"
+          >
+            <IoClose size={28} />
+          </button>
+          {settingsPanel && (
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-500 transition-colors"
+              style={{ padding: '8px', color: showSettings ? '#6366f1' : undefined }}
+              title="설정"
+            >
+              <IoSettings size={28} />
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 설정 패널 */}
+      {showSettings && settingsPanel && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '-12px',
+            left: '50%',
+            transform: 'translateX(-50%) translateY(-100%)',
+            background: 'white',
+            borderRadius: '12px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+            border: '1px solid #e2e8f0',
+            padding: '12px',
+            zIndex: 100,
+            minWidth: '220px',
+            maxWidth: '320px',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {settingsPanel}
+        </div>
+      )}
+    </div>
   );
 }
