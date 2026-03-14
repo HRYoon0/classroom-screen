@@ -103,7 +103,7 @@ export async function validateToken(): Promise<boolean> {
   }
 }
 
-// 자동 토큰 갱신 (prompt=none으로 팝업 없이 시도)
+// 자동 토큰 갱신 (prompt=none 숨겨진 팝업으로 시도)
 export function silentRefresh(): Promise<string | null> {
   return new Promise((resolve) => {
     const redirectUri = window.location.origin;
@@ -117,49 +117,50 @@ export function silentRefresh(): Promise<string | null> {
     });
 
     const url = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-    // 숨겨진 iframe으로 갱신 시도
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = url;
+    // 화면 밖 작은 팝업으로 갱신 (iframe은 cross-origin 차단됨)
+    const popup = window.open(url, 'silent-refresh', 'width=1,height=1,left=-100,top=-100');
+
+    if (!popup) {
+      resolve(null);
+      return;
+    }
 
     const timeout = setTimeout(() => {
-      cleanup();
+      clearInterval(timer);
+      try { popup.close(); } catch { /* 무시 */ }
       resolve(null);
     }, 10000);
 
-    function cleanup() {
-      clearTimeout(timeout);
-      window.removeEventListener('message', onMessage);
-      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
-    }
-
-    function onMessage() {
-      // iframe은 message 이벤트 대신 load 이벤트 사용
-    }
-
-    iframe.addEventListener('load', () => {
+    const timer = setInterval(() => {
       try {
-        const iframeUrl = iframe.contentWindow?.location.href;
-        if (iframeUrl && iframeUrl.startsWith(redirectUri) && iframeUrl.includes('#')) {
-          const hash = new URL(iframeUrl).hash;
-          const token = new URLSearchParams(hash.substring(1)).get('access_token');
-          if (token) {
-            accessToken = token;
-            localStorage.setItem(TOKEN_KEY, token);
-            cleanup();
-            resolve(token);
-            return;
+        if (popup.closed) {
+          clearInterval(timer);
+          clearTimeout(timeout);
+          resolve(null);
+          return;
+        }
+        const popupUrl = popup.location.href;
+        if (popupUrl.startsWith(redirectUri)) {
+          clearInterval(timer);
+          clearTimeout(timeout);
+          if (popupUrl.includes('#')) {
+            const hash = new URL(popupUrl).hash;
+            const token = new URLSearchParams(hash.substring(1)).get('access_token');
+            if (token) {
+              accessToken = token;
+              localStorage.setItem(TOKEN_KEY, token);
+              popup.close();
+              resolve(token);
+              return;
+            }
           }
+          popup.close();
+          resolve(null);
         }
       } catch {
-        // cross-origin 에러 - Google이 거부한 경우
+        // cross-origin 에러 무시 (아직 Google 페이지)
       }
-      cleanup();
-      resolve(null);
-    });
-
-    window.addEventListener('message', onMessage);
-    document.body.appendChild(iframe);
+    }, 200);
   });
 }
 
@@ -167,8 +168,25 @@ export function silentRefresh(): Promise<string | null> {
 export async function restoreSession(): Promise<boolean> {
   if (!accessToken) return false;
 
-  const valid = await validateToken();
-  if (valid) return true;
+  // 토큰 유효성 확인 (만료 여부와 무관하게 일단 시도)
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${accessToken}`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const expiresIn = Number(data.expires_in);
+      // 10분 이상 남아있으면 바로 사용
+      if (expiresIn > 600) return true;
+      // 10분 미만이면 백그라운드 갱신 시도하되, 현재 토큰은 유효하므로 true 반환
+      if (expiresIn > 0) {
+        silentRefresh().then((newToken) => {
+          if (!newToken) { /* 갱신 실패해도 현재 토큰 만료까지 사용 */ }
+        });
+        return true;
+      }
+    }
+  } catch { /* 네트워크 오류 - 오프라인일 수 있으므로 일단 유지 */ return true; }
 
   // 토큰 만료됨 → 자동 갱신 시도
   const newToken = await silentRefresh();
