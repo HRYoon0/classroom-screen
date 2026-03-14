@@ -89,27 +89,24 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
   const sliderMarks = [0, 25, 50, 75, 100];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '8px', padding: '4px 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '14px', padding: '4px 0' }}>
       {/* 반원 게이지 */}
-      <div style={{ position: 'relative', width: '180px', height: '100px' }}>
-        <svg width="180" height="100" viewBox="0 0 180 100">
-          {/* 배경 호 */}
+      <div style={{ position: 'relative', width: '320px', height: '175px' }}>
+        <svg width="320" height="175" viewBox="0 0 320 175">
           <path
-            d="M 10,95 A 80,80 0 0,1 170,95"
-            fill="none" stroke="#fee2e2" strokeWidth="14" strokeLinecap="round"
+            d="M 15,170 A 145,145 0 0,1 305,170"
+            fill="none" stroke="#fee2e2" strokeWidth="24" strokeLinecap="round"
           />
-          {/* 게이지 호 */}
           {gaugeProgress > 0 && (
             <path
-              d="M 10,95 A 80,80 0 0,1 170,95"
-              fill="none" stroke={gaugeColor} strokeWidth="14" strokeLinecap="butt"
-              strokeDasharray={`${arcLength}`}
-              strokeDashoffset={gaugeOffset}
+              d="M 15,170 A 145,145 0 0,1 305,170"
+              fill="none" stroke={gaugeColor} strokeWidth="24" strokeLinecap="butt"
+              strokeDasharray="455"
+              strokeDashoffset={455 * (1 - gaugeProgress)}
               style={{ transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s' }}
             />
           )}
         </svg>
-        {/* 중앙 텍스트 */}
         <div style={{
           position: 'absolute',
           bottom: '0',
@@ -118,7 +115,7 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
           textAlign: 'center',
         }}>
           <div style={{
-            fontSize: '32px',
+            fontSize: '56px',
             fontWeight: 700,
             fontVariantNumeric: 'tabular-nums',
             fontFamily: 'monospace',
@@ -131,12 +128,12 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
       </div>
 
       {/* "최대 소음" 라벨 */}
-      <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+      <div style={{ fontSize: '22px', color: '#64748b', fontWeight: 500 }}>
         최대 소음
       </div>
 
       {/* 임계값 슬라이더 */}
-      <div style={{ width: '100%', padding: '0 8px', position: 'relative' }}>
+      <div style={{ width: '100%', padding: '0 16px', position: 'relative' }}>
         <input
           type="range"
           min={10}
@@ -147,24 +144,23 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
             width: '100%',
             accentColor: '#6366f1',
             cursor: 'pointer',
+            height: '6px',
           }}
         />
-        {/* 슬라이더 눈금 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px', marginTop: '-2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px', marginTop: '2px' }}>
           {sliderMarks.map((m) => (
-            <span key={m} style={{ fontSize: '9px', color: '#94a3b8' }}>{m}</span>
+            <span key={m} style={{ fontSize: '14px', color: '#94a3b8' }}>{m}</span>
           ))}
         </div>
       </div>
 
       {/* 하단 버튼 영역 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
-        {/* 종 토글 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
         <button
           onClick={() => onConfigChange({ ...config, bellEnabled: !bellEnabled })}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '56px',
+            height: '56px',
             borderRadius: '50%',
             border: `2px solid ${bellEnabled ? '#6366f1' : '#e2e8f0'}`,
             background: 'none',
@@ -176,33 +172,31 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
             transition: 'all 0.15s',
           }}
         >
-          {bellEnabled ? <IoNotifications size={20} /> : <IoNotificationsOff size={20} />}
+          {bellEnabled ? <IoNotifications size={28} /> : <IoNotificationsOff size={28} />}
         </button>
 
-        {/* 초과 횟수 */}
         {overCount > 0 && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
-            padding: '6px 12px',
+            gap: '6px',
+            padding: '10px 18px',
             background: '#eef2ff',
-            borderRadius: '8px',
-            fontSize: '14px',
+            borderRadius: '10px',
+            fontSize: '22px',
             fontWeight: 600,
             color: '#6366f1',
           }}>
-            <IoNotifications size={16} />
+            <IoNotifications size={22} />
             {overCount}
           </div>
         )}
 
-        {/* 마이크 토글 */}
         <button
           onClick={isActive ? stop : start}
           style={{
-            width: '40px',
-            height: '40px',
+            width: '56px',
+            height: '56px',
             borderRadius: '50%',
             border: `2px solid ${isActive ? '#ef4444' : '#1e293b'}`,
             background: 'none',
@@ -214,7 +208,7 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
             transition: 'all 0.15s',
           }}
         >
-          {isActive ? <IoMicOff size={20} /> : <IoMic size={20} />}
+          {isActive ? <IoMicOff size={28} /> : <IoMic size={28} />}
         </button>
       </div>
     </div>
