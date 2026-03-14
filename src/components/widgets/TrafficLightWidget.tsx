@@ -39,7 +39,7 @@ export default function TrafficLightWidget() {
     <div className="flex items-center justify-center h-full">
       {/* 신호등 하우징 */}
       <div className="bg-gradient-to-b from-slate-500 to-slate-700 rounded-[28px] p-3 flex flex-col gap-2.5 shadow-lg">
-        {LIGHTS.map(({ color, activeColor, glowColor, dimColor }) => {
+        {LIGHTS.map(({ color, activeColor, glowColor, dimColor, label }) => {
           const isActive = activeLight === color;
           return (
             <button
@@ -63,6 +63,22 @@ export default function TrafficLightWidget() {
                     background: 'radial-gradient(ellipse, rgba(255,255,255,0.5) 0%, transparent 70%)',
                   }}
                 />
+              )}
+              {/* 활성화 시 라벨 표시 */}
+              {isActive && (
+                <span style={{
+                  position: 'absolute',
+                  left: '68px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  whiteSpace: 'nowrap',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  color: activeColor,
+                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                }}>
+                  {label}
+                </span>
               )}
             </button>
           );
