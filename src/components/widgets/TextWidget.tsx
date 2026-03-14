@@ -172,7 +172,7 @@ function TextWidget({ config, onConfigChange }: Props) {
   }, [applyColorToSelection, update, onConfigChange]);
 
   return (
-    <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+    <div style={{ position: 'relative', height: '100%', overflow: 'visible' }}>
       <div
         ref={editorRef}
         contentEditable

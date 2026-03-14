@@ -183,7 +183,7 @@ export default function WidgetWrapper({
         style={{ overflow: 'visible' }}
         onMouseDown={handleDragStart}
       >
-        <div className="flex-1 min-h-0" style={{ padding: 24, overflow: 'hidden' }}>{children}</div>
+        <div className="flex-1 min-h-0" style={{ padding: 24, overflow: 'visible', position: 'relative' }}>{children}</div>
       </div>
 
       {/* 플로팅 툴바 (삭제 + 설정) */}
