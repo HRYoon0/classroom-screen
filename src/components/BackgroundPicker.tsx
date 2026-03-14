@@ -10,7 +10,7 @@ interface Props {
 export default function BackgroundPicker({ current, onChange, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-96 max-h-[80vh] overflow-auto">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-[420px] max-h-[80vh] overflow-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-slate-800">배경 설정</h2>
           <button
@@ -23,7 +23,7 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
 
         {/* 그라데이션 배경 */}
         <p className="text-sm text-slate-500 mb-2 font-medium">그라데이션</p>
-        <div className="grid grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-4 gap-3 mb-5">
           {BACKGROUNDS.map((bg) => (
             <button
               key={bg}
@@ -40,7 +40,7 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
 
         {/* 단색 배경 */}
         <p className="text-sm text-slate-500 mb-2 font-medium">단색</p>
-        <div className="grid grid-cols-6 gap-2 mb-4">
+        <div className="grid grid-cols-6 gap-3 mb-5">
           {[
             '#ffffff', '#f1f5f9', '#e2e8f0', '#1e293b', '#0f172a', '#000000',
             '#fef2f2', '#fef9c3', '#f0fdf4', '#eff6ff', '#faf5ff', '#fff1f2',
