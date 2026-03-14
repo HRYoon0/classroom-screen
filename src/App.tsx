@@ -115,18 +115,33 @@ function App() {
     setLoginLoading(false);
   };
 
-  // 페이지 로드 시: 저장된 토큰 검증 + 만료 시 자동 갱신
-  useEffect(() => {
-    if (isSignedIn()) {
-      (async () => {
-        const valid = await restoreSession();
-        if (valid) {
-          const info = await getUserInfo();
-          if (info) setUser(info);
-        }
-      })();
+  // 세션 복원 함수
+  const tryRestoreSession = useCallback(async () => {
+    if (!isSignedIn()) return;
+    const valid = await restoreSession();
+    if (valid) {
+      const info = await getUserInfo();
+      if (info) setUser(info);
+    } else {
+      setUser(null);
     }
   }, []);
+
+  // 페이지 로드 시: 저장된 토큰 검증 + 만료 시 자동 갱신
+  useEffect(() => {
+    tryRestoreSession();
+  }, [tryRestoreSession]);
+
+  // 탭이 다시 활성화될 때 토큰 검증 + 갱신
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && isSignedIn()) {
+        tryRestoreSession();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [tryRestoreSession]);
 
   // 구글 로그아웃
   const handleSignOut = () => {
