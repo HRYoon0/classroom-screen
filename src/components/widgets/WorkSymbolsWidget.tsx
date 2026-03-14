@@ -162,23 +162,40 @@ interface WidgetProps {
 
 export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
   const [activeIdx, setActiveIdx] = useState(0);
+  // 각 아이콘의 표시 여부를 개별 관리
+  const [visibleIcons, setVisibleIcons] = useState<boolean[]>(SYMBOLS.map(() => false));
   const [showPicker, setShowPicker] = useState(false);
-  const [leaving, setLeaving] = useState(false);
-  const leaveTimer = useRef<number>(0);
+  const timersRef = useRef<number[]>([]);
 
-  // 선택 시 등장, 해제 시 퇴장 애니메이션 후 숨김
+  // 등장: 왼쪽부터 하나씩 페이드인
+  // 퇴장: 왼쪽부터 하나씩 페이드아웃
   useEffect(() => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
     if (isSelected) {
-      clearTimeout(leaveTimer.current);
-      setLeaving(false);
       setShowPicker(true);
+      SYMBOLS.forEach((_, i) => {
+        const t = window.setTimeout(() => {
+          setVisibleIcons((prev) => { const next = [...prev]; next[i] = true; return next; });
+        }, i * 60);
+        timersRef.current.push(t);
+      });
     } else if (showPicker) {
-      setLeaving(true);
-      leaveTimer.current = window.setTimeout(() => {
+      SYMBOLS.forEach((_, i) => {
+        const t = window.setTimeout(() => {
+          setVisibleIcons((prev) => { const next = [...prev]; next[i] = false; return next; });
+        }, i * 50);
+        timersRef.current.push(t);
+      });
+      // 모두 사라진 후 DOM 제거
+      const t = window.setTimeout(() => {
         setShowPicker(false);
-        setLeaving(false);
-      }, 400); // 퇴장 애니메이션 시간
+      }, SYMBOLS.length * 50 + 200);
+      timersRef.current.push(t);
     }
+
+    return () => timersRef.current.forEach(clearTimeout);
   }, [isSelected]);
 
   const handleSelect = useCallback((idx: number) => {
@@ -253,10 +270,9 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
                 color: activeIdx === i ? '#6366f1' : '#64748b',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                 padding: 0,
-                animation: leaving
-                  ? `icon-out 0.25s ease-in ${i * 0.04}s forwards`
-                  : `icon-in 0.3s ease-out ${i * 0.05}s both`,
-                transition: 'border 0.15s, color 0.15s',
+                opacity: visibleIcons[i] ? 1 : 0,
+                transform: visibleIcons[i] ? 'scale(1)' : 'scale(0.6)',
+                transition: 'opacity 0.2s ease, transform 0.2s ease, border 0.15s, color 0.15s',
               }}
             >
               {sym.icon(28)}
@@ -264,17 +280,6 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
           ))}
         </div>
       )}
-
-      <style>{`
-        @keyframes icon-in {
-          from { opacity: 0; transform: translateY(16px) scale(0.5); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes icon-out {
-          from { opacity: 1; transform: translateY(0) scale(1); }
-          to { opacity: 0; transform: translateY(16px) scale(0.5); }
-        }
-      `}</style>
     </div>
   );
 }
