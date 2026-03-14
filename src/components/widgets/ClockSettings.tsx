@@ -7,9 +7,9 @@ const CLOCK_STYLES = [
   { id: 'classic', label: '클래식', desc: '숫자 + 눈금' },
   { id: 'minimal', label: '미니멀', desc: '깔끔한 눈금만' },
   { id: 'digital', label: '디지털', desc: '큰 숫자 표시' },
-  { id: 'neon', label: '네온', desc: '원형 프로그래스' },
   { id: 'cat', label: '🐱 고양이', desc: '꼬리가 흔들리는 시계' },
   { id: 'flower', label: '🌸 꽃', desc: '파스텔 꽃잎 시계' },
+  { id: 'bear', label: '🐻 곰돌이', desc: '볼 터치 곰돌이 시계' },
 ];
 
 export default function ClockSettings({ config, onConfigChange }: Props) {
