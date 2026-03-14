@@ -60,8 +60,18 @@ export default function GroupMakerWidget({ config, onConfigChange }: Props) {
           </select>
           <button
             onClick={() => names.length > 0 && setShowInput(false)}
-            className="ml-auto px-3 py-1.5 bg-indigo-500 text-white rounded text-sm font-semibold hover:bg-indigo-600 disabled:opacity-50"
             disabled={names.length === 0}
+            style={{
+              marginLeft: 'auto',
+              padding: '8px 16px',
+              background: names.length === 0 ? '#cbd5e1' : '#6366f1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: names.length === 0 ? 'default' : 'pointer',
+            }}
           >
             완료
           </button>
