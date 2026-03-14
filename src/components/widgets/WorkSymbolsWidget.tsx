@@ -258,8 +258,8 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
               key={sym.id}
               onClick={(e) => { e.stopPropagation(); handleSelect(i); }}
               style={{
-                width: '56px',
-                height: '56px',
+                width: '48px',
+                height: '48px',
                 borderRadius: '50%',
                 border: activeIdx === i ? '2px solid #6366f1' : '2px solid #e2e8f0',
                 background: 'white',
@@ -275,7 +275,7 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
                 transition: 'opacity 0.2s ease, transform 0.2s ease, border 0.15s, color 0.15s',
               }}
             >
-              {sym.icon(32)}
+              {sym.icon(28)}
             </button>
           ))}
         </div>
