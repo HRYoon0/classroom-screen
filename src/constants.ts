@@ -90,12 +90,12 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
   {
     name: '교실',
     photos: [
-      U('photo-1577896851231-70ef18881754'),
-      U('photo-1588075592446-265fd1e6e76f'),
-      P('premium_photo-1661391735643-204f6cd45754'),
-      U('photo-1567057420215-0afa9aa9253a'),
-      P('premium_photo-1686920245013-365ae71428a2'),
-      U('photo-1533247774066-59cbfc352299'),
+      U('photo-1769720205277-7f4b81d497c6'),
+      U('photo-1536221993589-9edbbca2c7fc'),
+      P('premium_photo-1683140930139-74f5f27a9fd9'),
+      U('photo-1520881685182-f4f6a103adf5'),
+      U('photo-1535340582796-799448c62e08'),
+      P('premium_photo-1665520346896-784e4945f09d'),
     ],
   },
   {
