@@ -117,22 +117,21 @@ export function isSignedIn() {
 }
 
 // 앱 시작 / 탭 복귀 시 세션 복원
-export async function restoreSession(): Promise<boolean> {
-  if (!accessToken) return false;
+// 반환: 'valid' | 'expired' | 'none'
+export async function restoreSession(): Promise<'valid' | 'expired' | 'none'> {
+  if (!accessToken) return 'none';
 
-  // 만료 시각 기반 확인 (API 호출 없음)
-  if (!isTokenExpired()) return true;
+  // 만료 시각 기반 확인 (API 호출 없음, 팝업 없음)
+  if (!isTokenExpired()) return 'valid';
 
-  // 만료됨 → prompt=none으로 자동 갱신 시도 (이전에 동의한 사용자면 팝업 안 보임)
-  try {
-    await openAuthPopup('none');
-    return true;
-  } catch {
-    // 갱신 실패 → 로그아웃하지 않고 토큰만 유지 (다음 API 호출에서 실패하면 그때 처리)
-    // 사용자에게 팝업을 보여주지 않음
-    signOut();
-    return false;
-  }
+  // 만료됨 — 로그아웃하지 않고 만료 상태만 알림
+  // 사용자가 재로그인 버튼을 클릭하면 그때 팝업 열림
+  return 'expired';
+}
+
+// 재로그인 (사용자 클릭에 의해 호출 → 팝업 차단 안 됨)
+export function reSignIn(): Promise<string> {
+  return openAuthPopup('none').catch(() => openAuthPopup('select_account'));
 }
 
 // appDataFolder에서 파일 ID 찾기

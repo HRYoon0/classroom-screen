@@ -15,6 +15,7 @@ import {
   loadFromDrive,
   getUserInfo,
   restoreSession,
+  reSignIn,
 } from './services/googleDrive';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
 
   // 구글 드라이브 관련 상태
   const [user, setUser] = useState<{ name: string; email: string; picture: string } | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -118,14 +120,31 @@ function App() {
   // 세션 복원 함수
   const tryRestoreSession = useCallback(async () => {
     if (!isSignedIn()) return;
-    const valid = await restoreSession();
-    if (valid) {
+    const status = await restoreSession();
+    if (status === 'valid') {
+      setSessionExpired(false);
       const info = await getUserInfo();
       if (info) setUser(info);
-    } else {
-      setUser(null);
+    } else if (status === 'expired') {
+      setSessionExpired(true);
     }
   }, []);
+
+  // 재로그인 (세션 만료 시 사용자 클릭으로 호출)
+  const handleReSignIn = async () => {
+    try {
+      await reSignIn();
+      setSessionExpired(false);
+      const info = await getUserInfo();
+      if (info) setUser(info);
+      showMsg('세션이 갱신되었습니다');
+    } catch {
+      signOut();
+      setUser(null);
+      setSessionExpired(false);
+      showMsg('재로그인이 필요합니다');
+    }
+  };
 
   // 페이지 로드 시: 저장된 토큰 검증 + 만료 시 자동 갱신
   useEffect(() => {
@@ -269,14 +288,18 @@ function App() {
         {user ? (
           <div className="relative" ref={userMenuRef}>
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="w-9 h-9 rounded-full overflow-hidden shadow-lg border-2 border-emerald-400 hover:border-emerald-500 transition-colors"
-              title={user.name}
+              onClick={() => sessionExpired ? handleReSignIn() : setShowUserMenu(!showUserMenu)}
+              className={`w-9 h-9 rounded-full overflow-hidden shadow-lg border-2 transition-colors ${
+                sessionExpired ? 'border-amber-400 hover:border-amber-500' : 'border-emerald-400 hover:border-emerald-500'
+              }`}
+              title={sessionExpired ? '세션 만료 — 클릭하여 재로그인' : user.name}
             >
               <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
             </button>
-            {/* 온라인 표시 */}
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />
+            {/* 온라인/만료 표시 */}
+            <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${
+              sessionExpired ? 'bg-amber-400' : 'bg-emerald-400'
+            }`} />
             {showUserMenu && (
               <div className="absolute right-0 top-12 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl border border-white/60 min-w-[200px] overflow-hidden">
                 <div style={{ padding: '14px 20px 10px' }}>
