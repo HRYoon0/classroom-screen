@@ -8,7 +8,7 @@ export const WIDGET_META: Record<WidgetType, WidgetMeta> = {
   'noise-meter': { type: 'noise-meter', label: '소음 측정기', icon: '🔊', defaultW: 320, defaultH: 240 },
   'random-name': { type: 'random-name', label: '이름 뽑기', icon: '👤', defaultW: 340, defaultH: 300 },
   'group-maker': { type: 'group-maker', label: '모둠 만들기', icon: '👥', defaultW: 440, defaultH: 380 },
-  poll: { type: 'poll', label: '투표', icon: '📊', defaultW: 380, defaultH: 320 },
+  poll: { type: 'poll', label: '투표', icon: '📊', defaultW: 570, defaultH: 480 },
   text: { type: 'text', label: '텍스트', icon: '📝', defaultW: 360, defaultH: 200 },
   drawing: { type: 'drawing', label: '그림판', icon: '🎨', defaultW: 460, defaultH: 360 },
   'qr-code': { type: 'qr-code', label: 'QR 코드', icon: '📱', defaultW: 280, defaultH: 320 },
