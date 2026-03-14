@@ -54,6 +54,39 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
     ],
   },
   {
+    name: '여름',
+    photos: [
+      U('photo-1507525428034-b723cf961d3e'),
+      U('photo-1473116763249-2faaef81ccda'),
+      U('photo-1504701954957-2010ec3bcec1'),
+      U('photo-1501426026826-31c667bdf23d'),
+      U('photo-1414609245224-afa02bfb3fda'),
+      U('photo-1468581264429-2548ef9eb732'),
+    ],
+  },
+  {
+    name: '가을',
+    photos: [
+      U('photo-1507003211169-0a1dd7228f2d'),
+      U('photo-1509316975850-ff9c5deb0cd9'),
+      U('photo-1477322524744-0eece9e79640'),
+      U('photo-1473496169904-658ba7c44d8a'),
+      U('photo-1508193638397-1c4234db14d8'),
+      U('photo-1521295121783-8a321d551ad2'),
+    ],
+  },
+  {
+    name: '겨울',
+    photos: [
+      U('photo-1476231682828-37e571bc172f'),
+      U('photo-1491002052546-bf38f186af56'),
+      U('photo-1478265409131-1f65c88f965c'),
+      U('photo-1516912481808-3406841bd33c'),
+      U('photo-1418985991508-e47386d96a71'),
+      U('photo-1495107334309-fcf20504a5ab'),
+    ],
+  },
+  {
     name: '자연',
     photos: [
       U('photo-1506744038136-46273834b3fb'),
