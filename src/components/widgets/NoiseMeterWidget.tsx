@@ -16,8 +16,6 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const wasOverRef = useRef(false);
-  const bellAudioRef = useRef<HTMLAudioElement | null>(null);
-
   // 종소리 재생
   const playBell = useCallback(() => {
     if (!bellEnabled) return;
