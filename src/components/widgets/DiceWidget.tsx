@@ -23,7 +23,7 @@ function DiceFace({ value, size = 160, style }: { value: number; size?: number; 
   );
 }
 
-type Phase = 'idle' | 'throwing' | 'falling' | 'bouncing' | 'done';
+type Phase = 'idle' | 'throwing' | 'falling' | 'bounce1' | 'fall2' | 'bounce2' | 'fall3' | 'bounce3' | 'done';
 
 export default function DiceWidget() {
   const [diceCount, setDiceCount] = useState(1);
@@ -41,36 +41,45 @@ export default function DiceWidget() {
     // 1단계: 위로 던지기
     setPhase('throwing');
 
-    // 2단계: 숫자 빠르게 돌리기 (공중에서)
+    // 숫자 빠르게 돌리기 (공중에서)
     let count = 0;
     const shuffleInterval = setInterval(() => {
       setValues(Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1));
       count++;
     }, 50);
 
-    // 3단계: 떨어지기 (500ms 후)
-    timers.current.push(window.setTimeout(() => {
-      setPhase('falling');
-    }, 400));
+    // 2단계: 떨어지기
+    timers.current.push(window.setTimeout(() => setPhase('falling'), 400));
 
-    // 4단계: 바운스 착지 (800ms 후)
+    // 3단계: 첫 번째 바운스 (높게)
+    timers.current.push(window.setTimeout(() => setPhase('bounce1'), 650));
+
+    // 4단계: 두 번째 낙하
+    timers.current.push(window.setTimeout(() => setPhase('fall2'), 800));
+
+    // 5단계: 두 번째 바운스 (낮게)
+    timers.current.push(window.setTimeout(() => setPhase('bounce2'), 950));
+
+    // 6단계: 세 번째 낙하
+    timers.current.push(window.setTimeout(() => setPhase('fall3'), 1050));
+
+    // 7단계: 세 번째 바운스 (아주 낮게)
     timers.current.push(window.setTimeout(() => {
       clearInterval(shuffleInterval);
       setValues(Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1));
-      setPhase('bouncing');
-    }, 700));
+      setPhase('bounce3');
+    }, 1120));
 
-    // 5단계: 안정 (1200ms 후)
+    // 8단계: 안정
     timers.current.push(window.setTimeout(() => {
       setPhase('done');
       setIsRolling(false);
-      // 효과음
       try {
         const audio = new Audio('/sounds/alarm4.mp3');
         audio.volume = 0.3;
         audio.play().catch(() => {});
       } catch { /* 무시 */ }
-    }, 1100));
+    }, 1350));
   };
 
   const total = values.reduce((a, b) => a + b, 0);
@@ -84,25 +93,45 @@ export default function DiceWidget() {
     switch (phase) {
       case 'throwing':
         return {
-          transform: `translateY(-200px) rotate(${randomRotate * 3}deg) scale(0.8)`,
+          transform: `translateY(-220px) rotate(${randomRotate * 4}deg) scale(0.7)`,
           opacity: 0.8,
           transition: 'transform 0.4s cubic-bezier(0.2, 0, 0.3, 1), opacity 0.2s',
         };
       case 'falling':
         return {
-          transform: `translateY(30px) rotate(${randomRotate}deg) scale(1.1)`,
+          transform: `translateY(20px) rotate(${randomRotate * 2}deg) scale(1.08)`,
           opacity: 1,
-          transition: 'transform 0.3s cubic-bezier(0.6, 0, 1, 1), opacity 0.1s',
+          transition: 'transform 0.25s cubic-bezier(0.6, 0, 1, 1), opacity 0.1s',
         };
-      case 'bouncing':
+      case 'bounce1':
         return {
-          transform: `translateY(-8px) translateX(${randomX}px) rotate(${randomRotate * 0.5}deg) scale(1.05)`,
-          transition: 'transform 0.2s cubic-bezier(0.3, 0, 0.2, 1)',
+          transform: `translateY(-60px) translateX(${randomX}px) rotate(${randomRotate}deg) scale(1)`,
+          transition: 'transform 0.15s cubic-bezier(0.3, 0, 0.2, 1)',
+        };
+      case 'fall2':
+        return {
+          transform: `translateY(10px) translateX(${randomX * 0.7}px) rotate(${randomRotate * 0.6}deg) scale(1.04)`,
+          transition: 'transform 0.15s cubic-bezier(0.6, 0, 1, 1)',
+        };
+      case 'bounce2':
+        return {
+          transform: `translateY(-25px) translateX(${randomX * 0.5}px) rotate(${randomRotate * 0.3}deg) scale(1)`,
+          transition: 'transform 0.12s cubic-bezier(0.3, 0, 0.2, 1)',
+        };
+      case 'fall3':
+        return {
+          transform: `translateY(4px) translateX(${randomX * 0.3}px) rotate(${randomRotate * 0.15}deg) scale(1.01)`,
+          transition: 'transform 0.1s cubic-bezier(0.6, 0, 1, 1)',
+        };
+      case 'bounce3':
+        return {
+          transform: `translateY(-6px) translateX(${randomX * 0.2}px) rotate(${randomRotate * 0.08}deg) scale(1)`,
+          transition: 'transform 0.08s cubic-bezier(0.3, 0, 0.2, 1)',
         };
       case 'done':
         return {
-          transform: `translateY(0) translateX(${randomX * 0.3}px) rotate(${randomRotate * 0.2}deg) scale(1)`,
-          transition: 'transform 0.2s cubic-bezier(0, 0, 0.2, 1)',
+          transform: `translateY(0) translateX(${randomX * 0.1}px) rotate(${randomRotate * 0.05}deg) scale(1)`,
+          transition: 'transform 0.15s cubic-bezier(0, 0, 0.2, 1)',
         };
       default:
         return {
@@ -125,7 +154,7 @@ export default function DiceWidget() {
         ))}
 
         {/* 착지 이펙트 */}
-        {phase === 'bouncing' && (
+        {(phase === 'falling' || phase === 'fall2' || phase === 'fall3') && (
           <div style={{
             position: 'absolute',
             bottom: '-10px',
