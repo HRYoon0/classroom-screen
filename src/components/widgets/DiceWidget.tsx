@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-// 주사위 눈 위치 패턴
 const DOT_PATTERNS: Record<number, [number, number][]> = {
   1: [[50, 50]],
   2: [[25, 25], [75, 75]],
@@ -10,7 +9,7 @@ const DOT_PATTERNS: Record<number, [number, number][]> = {
   6: [[25, 25], [75, 25], [25, 50], [75, 50], [25, 75], [75, 75]],
 };
 
-function DiceFace({ value, size = 80 }: { value: number; size?: number }) {
+function DiceFace({ value, size = 160 }: { value: number; size?: number }) {
   const dots = DOT_PATTERNS[value] || [];
   return (
     <svg width={size} height={size} viewBox="0 0 100 100">
@@ -43,33 +42,41 @@ export default function DiceWidget() {
   };
 
   const total = values.reduce((a, b) => a + b, 0);
+  const diceSize = diceCount > 2 ? 120 : 160;
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-2">
-      <div className={`flex gap-2 flex-wrap justify-center ${isRolling ? 'animate-bounce' : ''}`}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px' }}>
+      <div style={{
+        display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center',
+        animation: isRolling ? 'dice-bounce 0.15s ease-in-out infinite alternate' : 'none',
+      }}>
         {values.map((v, i) => (
-          <DiceFace key={i} value={v} size={diceCount > 2 ? 60 : 80} />
+          <DiceFace key={i} value={v} size={diceSize} />
         ))}
       </div>
 
       {diceCount > 1 && (
-        <p className="text-sm text-slate-500 font-mono">합계: {total}</p>
+        <p style={{ fontSize: '20px', color: '#64748b', fontFamily: 'monospace', fontWeight: 600 }}>합계: {total}</p>
       )}
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', gap: '6px' }}>
           {[1, 2, 3].map((n) => (
             <button
               key={n}
-              onClick={() => {
-                setDiceCount(n);
-                setValues(Array(n).fill(1));
+              onClick={() => { setDiceCount(n); setValues(Array(n).fill(1)); }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                border: 'none',
+                fontSize: '18px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                background: diceCount === n ? '#6366f1' : '#f1f5f9',
+                color: diceCount === n ? 'white' : '#475569',
+                transition: 'all 0.15s',
               }}
-              className={`w-7 h-7 rounded text-xs font-bold transition-colors ${
-                diceCount === n
-                  ? 'bg-indigo-500 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
             >
               {n}
             </button>
@@ -78,11 +85,27 @@ export default function DiceWidget() {
         <button
           onClick={roll}
           disabled={isRolling}
-          className="min-w-[80px] h-8 px-5 bg-indigo-500 text-white rounded text-[13px] font-semibold hover:bg-indigo-600 disabled:opacity-60"
+          style={{
+            padding: '10px 24px',
+            borderRadius: '10px',
+            border: 'none',
+            background: isRolling ? '#a5b4fc' : '#6366f1',
+            color: 'white',
+            fontSize: '20px',
+            fontWeight: 600,
+            cursor: isRolling ? 'default' : 'pointer',
+          }}
         >
           🎲 굴리기!
         </button>
       </div>
+
+      <style>{`
+        @keyframes dice-bounce {
+          from { transform: translateY(0) rotate(-2deg); }
+          to { transform: translateY(-6px) rotate(2deg); }
+        }
+      `}</style>
     </div>
   );
 }
