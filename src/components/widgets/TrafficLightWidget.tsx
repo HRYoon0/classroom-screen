@@ -39,7 +39,7 @@ export default function TrafficLightWidget() {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
       {/* 신호등 하우징 */}
       <div className="bg-gradient-to-b from-slate-500 to-slate-700 rounded-[28px] p-3 flex flex-col gap-2.5 shadow-lg">
-        {LIGHTS.map(({ color, activeColor, glowColor, dimColor, label }) => {
+        {LIGHTS.map(({ color, activeColor, glowColor, dimColor }) => {
           const isActive = activeLight === color;
           return (
             <button
