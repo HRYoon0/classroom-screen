@@ -16,22 +16,11 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const wasOverRef = useRef(false);
-  // 종소리 재생
+  // 종소리 재생 (맑은 벨 효과음)
   const playBell = useCallback(() => {
     if (!bellEnabled) return;
-    try {
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 800;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.4, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.8);
-    } catch { /* 무시 */ }
+    const audio = new Audio('/sounds/alarm2.mp3');
+    audio.play().catch(() => {});
   }, [bellEnabled]);
 
   const start = async () => {
@@ -110,13 +99,15 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
             fill="none" stroke="#fee2e2" strokeWidth="14" strokeLinecap="round"
           />
           {/* 게이지 호 */}
-          <path
-            d="M 10,95 A 80,80 0 0,1 170,95"
-            fill="none" stroke={gaugeColor} strokeWidth="14" strokeLinecap="round"
-            strokeDasharray={`${arcLength}`}
-            strokeDashoffset={gaugeOffset}
-            style={{ transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s' }}
-          />
+          {gaugeProgress > 0 && (
+            <path
+              d="M 10,95 A 80,80 0 0,1 170,95"
+              fill="none" stroke={gaugeColor} strokeWidth="14" strokeLinecap="butt"
+              strokeDasharray={`${arcLength}`}
+              strokeDashoffset={gaugeOffset}
+              style={{ transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s' }}
+            />
+          )}
         </svg>
         {/* 중앙 텍스트 */}
         <div style={{
