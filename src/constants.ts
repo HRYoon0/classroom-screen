@@ -5,7 +5,7 @@ export const WIDGET_META: Record<WidgetType, WidgetMeta> = {
   stopwatch: { type: 'stopwatch', label: '스톱워치', icon: '⏱', defaultW: 320, defaultH: 200 },
   clock: { type: 'clock', label: '시계', icon: '🕐', defaultW: 260, defaultH: 300 },
   'traffic-light': { type: 'traffic-light', label: '신호등', icon: '🚦', defaultW: 180, defaultH: 420 },
-  'noise-meter': { type: 'noise-meter', label: '소음 측정기', icon: '🔊', defaultW: 480, defaultH: 400 },
+  'noise-meter': { type: 'noise-meter', label: '소음 측정기', icon: '🔊', defaultW: 400, defaultH: 320 },
   'random-name': { type: 'random-name', label: '이름 뽑기', icon: '👤', defaultW: 500, defaultH: 450 },
   'group-maker': { type: 'group-maker', label: '모둠 만들기', icon: '👥', defaultW: 440, defaultH: 380 },
   poll: { type: 'poll', label: '투표', icon: '📊', defaultW: 570, defaultH: 480 },

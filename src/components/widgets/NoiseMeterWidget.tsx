@@ -86,20 +86,20 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
   const sliderMarks = [0, 25, 50, 75, 100];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '14px', padding: '4px 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '10px', padding: '4px 0' }}>
       {/* 반원 게이지 */}
-      <div style={{ position: 'relative', width: '320px', height: '175px' }}>
-        <svg width="320" height="175" viewBox="0 0 320 175">
+      <div style={{ position: 'relative', width: '250px', height: '138px' }}>
+        <svg width="250" height="138" viewBox="0 0 250 138">
           <path
-            d="M 15,170 A 145,145 0 0,1 305,170"
-            fill="none" stroke="#fee2e2" strokeWidth="24" strokeLinecap="round"
+            d="M 12,133 A 113,113 0 0,1 238,133"
+            fill="none" stroke="#fee2e2" strokeWidth="18" strokeLinecap="round"
           />
           {gaugeProgress > 0 && (
             <path
-              d="M 15,170 A 145,145 0 0,1 305,170"
-              fill="none" stroke={gaugeColor} strokeWidth="24" strokeLinecap="butt"
-              strokeDasharray="455"
-              strokeDashoffset={455 * (1 - gaugeProgress)}
+              d="M 12,133 A 113,113 0 0,1 238,133"
+              fill="none" stroke={gaugeColor} strokeWidth="18" strokeLinecap="butt"
+              strokeDasharray="355"
+              strokeDashoffset={355 * (1 - gaugeProgress)}
               style={{ transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s' }}
             />
           )}
@@ -112,7 +112,7 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
           textAlign: 'center',
         }}>
           <div style={{
-            fontSize: '56px',
+            fontSize: '44px',
             fontWeight: 700,
             fontVariantNumeric: 'tabular-nums',
             fontFamily: 'monospace',
@@ -124,67 +124,47 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
         </div>
       </div>
 
-      {/* "최대 소음" 라벨 */}
-      <div style={{ fontSize: '22px', color: '#64748b', fontWeight: 500 }}>
+      <div style={{ fontSize: '18px', color: '#64748b', fontWeight: 500 }}>
         최대 소음
       </div>
 
-      {/* 임계값 슬라이더 */}
-      <div style={{ width: '100%', padding: '0 16px', position: 'relative' }}>
+      <div style={{ width: '100%', padding: '0 12px', position: 'relative' }}>
         <input
           type="range"
           min={10}
           max={90}
           value={threshold}
           onChange={(e) => onConfigChange({ ...config, threshold: Number(e.target.value) })}
-          style={{
-            width: '100%',
-            accentColor: '#6366f1',
-            cursor: 'pointer',
-            height: '6px',
-          }}
+          style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
         />
-        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px', marginTop: '2px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 2px', marginTop: '0' }}>
           {sliderMarks.map((m) => (
-            <span key={m} style={{ fontSize: '14px', color: '#94a3b8' }}>{m}</span>
+            <span key={m} style={{ fontSize: '12px', color: '#94a3b8' }}>{m}</span>
           ))}
         </div>
       </div>
 
-      {/* 하단 버튼 영역 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '2px' }}>
         <button
           onClick={() => onConfigChange({ ...config, bellEnabled: !bellEnabled })}
           style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
+            width: '48px', height: '48px', borderRadius: '50%',
             border: `2px solid ${bellEnabled ? '#6366f1' : '#e2e8f0'}`,
-            background: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: bellEnabled ? '#6366f1' : '#94a3b8',
-            transition: 'all 0.15s',
+            background: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: bellEnabled ? '#6366f1' : '#94a3b8', transition: 'all 0.15s',
           }}
         >
-          {bellEnabled ? <IoNotifications size={28} /> : <IoNotificationsOff size={28} />}
+          {bellEnabled ? <IoNotifications size={24} /> : <IoNotificationsOff size={24} />}
         </button>
 
         {overCount > 0 && (
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: '10px 18px',
-            background: '#eef2ff',
-            borderRadius: '10px',
-            fontSize: '22px',
-            fontWeight: 600,
-            color: '#6366f1',
+            display: 'flex', alignItems: 'center', gap: '5px',
+            padding: '8px 14px', background: '#eef2ff', borderRadius: '8px',
+            fontSize: '18px', fontWeight: 600, color: '#6366f1',
           }}>
-            <IoNotifications size={22} />
+            <IoNotifications size={18} />
             {overCount}
           </div>
         )}
@@ -192,20 +172,14 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
         <button
           onClick={isActive ? stop : start}
           style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '50%',
+            width: '48px', height: '48px', borderRadius: '50%',
             border: `2px solid ${isActive ? '#ef4444' : '#1e293b'}`,
-            background: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: isActive ? '#ef4444' : '#1e293b',
-            transition: 'all 0.15s',
+            background: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: isActive ? '#ef4444' : '#1e293b', transition: 'all 0.15s',
           }}
         >
-          {isActive ? <IoMicOff size={28} /> : <IoMic size={28} />}
+          {isActive ? <IoMicOff size={24} /> : <IoMic size={24} />}
         </button>
       </div>
     </div>
