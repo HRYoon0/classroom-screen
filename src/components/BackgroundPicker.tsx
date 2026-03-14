@@ -1,6 +1,15 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { BACKGROUNDS, PHOTO_BACKGROUNDS } from '../constants';
-import { IoClose } from 'react-icons/io5';
+import { IoClose, IoSearch } from 'react-icons/io5';
+
+const UNSPLASH_ACCESS_KEY = 'loC0kf5_pwyxDC76zh1sidQpwvJah17evxkrr0iDGM0';
+
+interface UnsplashPhoto {
+  id: string;
+  urls: { raw: string; small: string };
+  user: { name: string; links: { html: string } };
+  links: { html: string };
+}
 
 interface Props {
   current: string;
@@ -9,15 +18,62 @@ interface Props {
 }
 
 export default function BackgroundPicker({ current, onChange, onClose }: Props) {
-  // 사진 배경은 url(...)로 저장
   const handlePhoto = (url: string) => {
     onChange(`url(${url}?w=1920&q=80)`);
   };
 
-  const isPhotoSelected = (url: string) =>
-    current.includes(url);
+  const isPhotoSelected = (url: string) => current.includes(url);
 
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+
+  // Unsplash 검색 상태
+  const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<UnsplashPhoto[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const debounceRef = useRef<number>(0);
+
+  const searchUnsplash = useCallback(async (q: string) => {
+    if (!q.trim()) {
+      setSearchResults([]);
+      setSearchError('');
+      return;
+    }
+    setSearching(true);
+    setSearchError('');
+    try {
+      const res = await fetch(
+        `https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=12&orientation=landscape`,
+        { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } }
+      );
+      if (!res.ok) {
+        if (res.status === 403) setSearchError('API 한도 초과. 잠시 후 다시 시도해주세요.');
+        else setSearchError('검색 실패');
+        setSearchResults([]);
+        return;
+      }
+      const data = await res.json();
+      setSearchResults(data.results || []);
+    } catch {
+      setSearchError('네트워크 오류');
+    } finally {
+      setSearching(false);
+    }
+  }, []);
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(() => searchUnsplash(value), 500);
+  };
+
+  const handleSearchPhoto = (photo: UnsplashPhoto) => {
+    // Unsplash API 가이드라인: download 트리거
+    fetch(`https://api.unsplash.com/photos/${photo.id}/download`, {
+      headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` },
+    }).catch(() => {});
+    handlePhoto(photo.urls.raw);
+  };
 
   return (
     <div
@@ -30,7 +86,7 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>배경 설정</h2>
           <button
             onClick={onClose}
@@ -40,8 +96,122 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
           </button>
         </div>
 
+        {/* 검색바 */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 14px',
+          borderRadius: '10px',
+          border: '2px solid #e2e8f0',
+          marginBottom: '20px',
+          background: '#f8fafc',
+        }}>
+          <IoSearch size={18} color="#94a3b8" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => handleQueryChange(e.target.value)}
+            placeholder="배경 사진 검색 (예: 교실, 봄, 바다...)"
+            style={{
+              flex: 1,
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontSize: '14px',
+              color: '#334155',
+            }}
+          />
+          {query && (
+            <button
+              onClick={() => { setQuery(''); setSearchResults([]); setSearchError(''); }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px' }}
+            >
+              <IoClose size={16} color="#94a3b8" />
+            </button>
+          )}
+        </div>
+
         {/* 스크롤 영역 */}
         <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
+
+          {/* 검색 결과 */}
+          {(searchResults.length > 0 || searching || searchError) && (
+            <div style={{ marginBottom: '24px' }}>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '10px' }}>
+                검색 결과
+                {searching && ' — 검색 중...'}
+              </p>
+
+              {searchError && (
+                <p style={{ fontSize: '13px', color: '#ef4444', marginBottom: '10px' }}>{searchError}</p>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {searchResults.map((photo) => (
+                  <button
+                    key={photo.id}
+                    onClick={() => handleSearchPhoto(photo)}
+                    style={{
+                      width: '100%',
+                      aspectRatio: '16/10',
+                      borderRadius: '10px',
+                      border: isPhotoSelected(photo.urls.raw) ? '3px solid #6366f1' : '2px solid transparent',
+                      cursor: 'pointer',
+                      overflow: 'hidden',
+                      position: 'relative',
+                      background: '#f1f5f9',
+                      transition: 'all 0.15s',
+                      transform: isPhotoSelected(photo.urls.raw) ? 'scale(1.03)' : 'none',
+                      boxShadow: isPhotoSelected(photo.urls.raw) ? '0 4px 12px rgba(99,102,241,0.3)' : '0 1px 3px rgba(0,0,0,0.1)',
+                      padding: 0,
+                    }}
+                  >
+                    <img
+                      src={`${photo.urls.small}`}
+                      alt=""
+                      loading="lazy"
+                      onLoad={() => setLoadedImages((prev) => new Set(prev).add(photo.urls.raw))}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        opacity: loadedImages.has(photo.urls.raw) ? 1 : 0,
+                        transition: 'opacity 0.3s',
+                      }}
+                    />
+                    {!loadedImages.has(photo.urls.raw) && (
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '20px', height: '20px', border: '2px solid #e2e8f0', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                      </div>
+                    )}
+                    {/* Unsplash 출처 표기 (API 가이드라인) */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      padding: '2px 6px',
+                      background: 'linear-gradient(transparent, rgba(0,0,0,0.5))',
+                      fontSize: '9px',
+                      color: 'white',
+                      textAlign: 'right',
+                    }}>
+                      {photo.user.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {searchResults.length > 0 && (
+                <p style={{ fontSize: '10px', color: '#94a3b8', marginTop: '8px', textAlign: 'center' }}>
+                  Photos by Unsplash
+                </p>
+              )}
+            </div>
+          )}
+
           {/* 사진 배경 카테고리들 */}
           {PHOTO_BACKGROUNDS.map((category) => (
             <div key={category.name}>
@@ -82,23 +252,9 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
                         transition: 'opacity 0.3s',
                       }}
                     />
-                    {/* 로딩 스피너 */}
                     {!loadedImages.has(url) && (
-                      <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                        <div style={{
-                          width: '20px',
-                          height: '20px',
-                          border: '2px solid #e2e8f0',
-                          borderTopColor: '#6366f1',
-                          borderRadius: '50%',
-                          animation: 'spin 0.8s linear infinite',
-                        }} />
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '20px', height: '20px', border: '2px solid #e2e8f0', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                       </div>
                     )}
                   </button>
