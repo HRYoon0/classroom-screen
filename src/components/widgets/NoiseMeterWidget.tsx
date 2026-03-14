@@ -77,10 +77,7 @@ export default function NoiseMeterWidget({ config, onConfigChange }: Props) {
     };
   }, []);
 
-  // 반원 게이지 계산 — SVG path 실측 길이 기준
-  const arcLength = 251; // M10,95 A80,80 0,0,1 170,95 의 실측 길이 (약 251)
   const gaugeProgress = isActive ? Math.min(level / 100, 1) : 0;
-  const gaugeOffset = arcLength * (1 - gaugeProgress);
 
   // 게이지 색상
   const gaugeColor = level > 70 ? '#ef4444' : level > 40 ? '#f59e0b' : '#22c55e';
