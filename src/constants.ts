@@ -87,6 +87,17 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
     ],
   },
   {
+    name: '교실',
+    photos: [
+      U('photo-1580582932707-520aed937b7b'),
+      U('photo-1612178574161-fd59b99b6894'),
+      U('photo-1564981797816-1043664bf78d'),
+      U('photo-1554523449-209945dde0c7'),
+      U('photo-1509062522246-3755977927d7'),
+      U('photo-1577896851231-70ef18881754'),
+    ],
+  },
+  {
     name: '자연',
     photos: [
       U('photo-1506744038136-46273834b3fb'),
@@ -105,7 +116,7 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
       U('photo-1484406566174-9da000fda645'),
       U('photo-1497752531616-c3afd9760a11'),
       U('photo-1517849845537-4d257902454a'),
-      U('photo-1474314881477-04c4aac40a0e'),
+      U('photo-1602491453631-e2a5ad90a131'),
     ],
   },
   {
