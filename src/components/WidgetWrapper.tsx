@@ -195,24 +195,26 @@ export default function WidgetWrapper({
         {/* 플로팅 툴바 (삭제 + 설정) */}
         {(isHovered || isSelected) && (
           <div
-            className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/60 px-1 py-0.5"
+            className="absolute left-1/2 flex items-center bg-white/95 backdrop-blur-sm shadow-lg border border-slate-200/60"
+            style={{ transform: 'translateX(-50%)', top: '-52px', gap: '4px', borderRadius: '12px', padding: '6px 8px' }}
             onMouseDown={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => onRemove(widget.id)}
-              className="p-1.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+              className="rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+              style={{ padding: '8px' }}
               title="삭제"
             >
-              <IoClose size={16} />
+              <IoClose size={28} />
             </button>
             {settingsPanel && (
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="p-1.5 rounded hover:bg-indigo-50 text-slate-400 hover:text-indigo-500 transition-colors"
-                style={{ color: showSettings ? '#6366f1' : undefined }}
+                className="rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-500 transition-colors"
+                style={{ padding: '8px', color: showSettings ? '#6366f1' : undefined }}
                 title="설정"
               >
-                <IoSettings size={16} />
+                <IoSettings size={28} />
               </button>
             )}
           </div>
