@@ -23,7 +23,8 @@ function DiceFace({ value, size = 160, style }: { value: number; size?: number; 
   );
 }
 
-type Phase = 'idle' | 'throw' | 'spin' | 'fall' | 'bounce1' | 'fall2' | 'bounce2' | 'fall3' | 'bounce3' | 'settle' | 'done';
+// 단순화: 올라감 → 내려옴 → 콩콩콩
+type Phase = 'idle' | 'up' | 'down' | 'b1' | 'b1down' | 'b2' | 'b2down' | 'b3' | 'settle' | 'done';
 
 export default function DiceWidget() {
   const [diceCount, setDiceCount] = useState(1);
@@ -39,46 +40,32 @@ export default function DiceWidget() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
 
-    // 셔플 시작
     shuffleRef.current = window.setInterval(() => {
       setValues(Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1));
     }, 40);
 
     const t = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms));
 
-    // 1: 위로 던지기
-    setPhase('throw');
-
-    // 2: 공중 최고점에서 회전
-    t(500, () => setPhase('spin'));
-
-    // 4: 낙하
-    t(1300, () => setPhase('fall'));
-
-    // 5: 첫 바운스 (높게)
-    t(1550, () => setPhase('bounce1'));
-
-    // 6: 두 번째 낙하
-    t(1750, () => setPhase('fall2'));
-
-    // 7: 두 번째 바운스
-    t(1900, () => setPhase('bounce2'));
-
-    // 8: 세 번째 낙하
-    t(2050, () => setPhase('fall3'));
-
-    // 9: 세 번째 바운스
-    t(2150, () => setPhase('bounce3'));
-
-    // 10: 안정
-    t(2300, () => {
+    // 올라감
+    setPhase('up');
+    // 내려옴
+    t(600, () => setPhase('down'));
+    // 콩 1 (높게)
+    t(850, () => setPhase('b1'));
+    t(1000, () => setPhase('b1down'));
+    // 콩 2 (중간)
+    t(1120, () => setPhase('b2'));
+    t(1220, () => setPhase('b2down'));
+    // 콩 3 (살짝)
+    t(1300, () => setPhase('b3'));
+    // 안정
+    t(1400, () => {
       clearInterval(shuffleRef.current);
       setValues(Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1));
       setPhase('settle');
     });
-
-    // 11: 완료
-    t(2550, () => {
+    // 완료
+    t(1600, () => {
       setPhase('done');
       setIsRolling(false);
       try {
@@ -93,67 +80,59 @@ export default function DiceWidget() {
   const diceSize = diceCount > 2 ? 90 : 160;
 
   const getDiceStyle = (index: number): React.CSSProperties => {
-    const r = (index * 37 + 15) % 30 - 15;
-    const x = (index * 23 + 7) % 20 - 10;
-    const dir = index % 2 === 0 ? 1 : -1;
+    const xOff = (index - (diceCount - 1) / 2) * 8;
 
     switch (phase) {
-      case 'throw':
+      case 'up':
         return {
-          transform: `translateY(-280px) rotate(${r * 5 * dir}deg) scale(0.6)`,
-          opacity: 0.7,
-          transition: 'transform 0.5s cubic-bezier(0.2, 0, 0.3, 1), opacity 0.2s',
+          transform: `translateY(-250px) scale(0.85)`,
+          opacity: 0.6,
+          transition: 'transform 0.6s cubic-bezier(0.33, 1, 0.68, 1), opacity 0.3s',
         };
-      case 'spin':
+      case 'down':
         return {
-          transform: `translateY(-200px) rotate(${1080 * dir + r * 3}deg) scale(0.7)`,
-          opacity: 0.85,
-          transition: 'transform 0.4s linear, opacity 0.1s',
-        };
-      case 'fall':
-        return {
-          transform: `translateY(25px) rotate(${1440 * dir + r * 2}deg) scale(1.15)`,
+          transform: `translateY(0px) translateX(${xOff}px) scale(1.08)`,
           opacity: 1,
-          transition: 'transform 0.35s cubic-bezier(0.6, 0, 1, 1), opacity 0.1s',
+          transition: 'transform 0.25s cubic-bezier(0.55, 0, 1, 0.45), opacity 0.1s',
         };
-      case 'bounce1':
+      case 'b1':
         return {
-          transform: `translateY(-110px) translateX(${x * 2}px) rotate(${1440 * dir + r}deg) scale(1)`,
-          transition: 'transform 0.15s cubic-bezier(0.3, 0, 0.2, 1)',
+          transform: `translateY(-80px) translateX(${xOff}px) scale(1)`,
+          transition: 'transform 0.15s cubic-bezier(0.33, 1, 0.68, 1)',
         };
-      case 'fall2':
+      case 'b1down':
         return {
-          transform: `translateY(15px) translateX(${x * 1.2}px) rotate(${1440 * dir + r * 0.5}deg) scale(1.06)`,
-          transition: 'transform 0.12s cubic-bezier(0.6, 0, 1, 1)',
+          transform: `translateY(0px) translateX(${xOff}px) scale(1.04)`,
+          transition: 'transform 0.12s cubic-bezier(0.55, 0, 1, 0.45)',
         };
-      case 'bounce2':
+      case 'b2':
         return {
-          transform: `translateY(-50px) translateX(${x * 0.7}px) rotate(${1440 * dir + r * 0.3}deg) scale(1)`,
-          transition: 'transform 0.1s cubic-bezier(0.3, 0, 0.2, 1)',
+          transform: `translateY(-35px) translateX(${xOff}px) scale(1)`,
+          transition: 'transform 0.1s cubic-bezier(0.33, 1, 0.68, 1)',
         };
-      case 'fall3':
+      case 'b2down':
         return {
-          transform: `translateY(8px) translateX(${x * 0.4}px) rotate(${1440 * dir + r * 0.15}deg) scale(1.02)`,
-          transition: 'transform 0.08s cubic-bezier(0.6, 0, 1, 1)',
+          transform: `translateY(0px) translateX(${xOff}px) scale(1.02)`,
+          transition: 'transform 0.08s cubic-bezier(0.55, 0, 1, 0.45)',
         };
-      case 'bounce3':
+      case 'b3':
         return {
-          transform: `translateY(-15px) translateX(${x * 0.2}px) rotate(${1440 * dir + r * 0.08}deg) scale(1)`,
-          transition: 'transform 0.06s cubic-bezier(0.3, 0, 0.2, 1)',
+          transform: `translateY(-10px) translateX(${xOff}px) scale(1)`,
+          transition: 'transform 0.08s cubic-bezier(0.33, 1, 0.68, 1)',
         };
       case 'settle':
         return {
-          transform: `translateY(0) translateX(${x * 0.05}px) rotate(${r * 0.03}deg) scale(1)`,
-          transition: 'transform 0.2s cubic-bezier(0, 0, 0.2, 1)',
+          transform: `translateY(0) translateX(${xOff * 0.5}px) scale(1)`,
+          transition: 'transform 0.15s ease-out',
         };
       case 'done':
         return {
-          transform: 'translateY(0) rotate(0deg) scale(1)',
-          transition: 'transform 0.15s ease',
+          transform: 'translateY(0) scale(1)',
+          transition: 'transform 0.2s ease',
         };
       default:
         return {
-          transform: 'translateY(0) rotate(0deg) scale(1)',
+          transform: 'translateY(0) scale(1)',
           transition: 'transform 0.3s ease',
         };
     }
@@ -161,12 +140,9 @@ export default function DiceWidget() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px', overflow: 'hidden', position: 'relative' }}>
-
-      {/* 주사위 영역 */}
       <div style={{
         display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center',
         minHeight: `${diceSize + 40}px`, alignItems: 'center',
-        position: 'relative',
       }}>
         {values.map((v, i) => (
           <DiceFace key={i} value={v} size={diceSize} style={getDiceStyle(i)} />
@@ -216,7 +192,6 @@ export default function DiceWidget() {
           🎲 굴리기!
         </button>
       </div>
-
     </div>
   );
 }
