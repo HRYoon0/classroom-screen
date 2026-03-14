@@ -8,9 +8,10 @@ const MONTHS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', 
 interface Props {
   config: Record<string, unknown>;
   onConfigChange: (config: Record<string, unknown>) => void;
+  isSelected?: boolean;
 }
 
-export default function CalendarWidget({ config, onConfigChange }: Props) {
+export default function CalendarWidget({ config, onConfigChange, isSelected = false }: Props) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
@@ -128,7 +129,7 @@ export default function CalendarWidget({ config, onConfigChange }: Props) {
               key={idx}
               onMouseEnter={() => setHoveredIdx(idx)}
               onMouseLeave={() => setHoveredIdx(null)}
-              onClick={() => cell.current && handleDateClick(year, month, cell.day)}
+              onClick={() => cell.current && isSelected && handleDateClick(year, month, cell.day)}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -152,7 +153,7 @@ export default function CalendarWidget({ config, onConfigChange }: Props) {
                 margin: '0 auto',
                 transition: 'all 0.15s',
                 position: 'relative',
-                cursor: cell.current ? 'pointer' : undefined,
+                cursor: cell.current && isSelected ? 'pointer' : undefined,
               }}
             >
               {cell.day}

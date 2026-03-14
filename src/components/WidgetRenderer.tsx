@@ -65,7 +65,7 @@ function renderWidgetContent(
     case 'work-symbols':
       return <WorkSymbolsWidget isSelected={isSelected} />;
     case 'calendar':
-      return <CalendarWidget config={widget.config} onConfigChange={onConfigChange} />;
+      return <CalendarWidget config={widget.config} onConfigChange={onConfigChange} isSelected={isSelected} />;
     default:
       return <div className="text-slate-400 text-sm">알 수 없는 위젯</div>;
   }
