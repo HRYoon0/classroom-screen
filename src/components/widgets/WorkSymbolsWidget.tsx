@@ -219,8 +219,8 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
     >
       {/* 메인 원형 아이콘 */}
       <div style={{
-        width: '180px',
-        height: '180px',
+        width: '240px',
+        height: '240px',
         borderRadius: '50%',
         background: '#f8fafc',
         display: 'flex',
@@ -232,12 +232,12 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
         transition: 'transform 0.2s, box-shadow 0.2s',
         transform: isSelected ? 'scale(0.95)' : 'scale(1)',
       }}>
-        {active.icon(80)}
+        {active.icon(110)}
         <span style={{
-          fontSize: '18px',
+          fontSize: '22px',
           fontWeight: 600,
           color: '#475569',
-          marginTop: '4px',
+          marginTop: '6px',
         }}>
           {active.label}
         </span>
@@ -258,8 +258,8 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
               key={sym.id}
               onClick={(e) => { e.stopPropagation(); handleSelect(i); }}
               style={{
-                width: '48px',
-                height: '48px',
+                width: '56px',
+                height: '56px',
                 borderRadius: '50%',
                 border: activeIdx === i ? '2px solid #6366f1' : '2px solid #e2e8f0',
                 background: 'white',
@@ -275,7 +275,7 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
                 transition: 'opacity 0.2s ease, transform 0.2s ease, border 0.15s, color 0.15s',
               }}
             >
-              {sym.icon(28)}
+              {sym.icon(32)}
             </button>
           ))}
         </div>
