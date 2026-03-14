@@ -78,7 +78,7 @@ export default function TrafficLightWidget() {
       </div>
       {activeLight !== 'off' && (
         <p style={{
-          fontSize: '22px',
+          fontSize: '33px',
           fontWeight: 700,
           color: LIGHTS.find((l) => l.color === activeLight)?.activeColor,
           textAlign: 'center',
