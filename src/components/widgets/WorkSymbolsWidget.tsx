@@ -12,21 +12,19 @@ const SYMBOLS: Symbol[] = [
     id: 'silence',
     label: '조용히',
     icon: (s) => (
-      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-        {/* 옆모습 얼굴 윤곽: 이마→코→입→턱 */}
-        <path d="M28 12 C22 12, 18 18, 18 26 L18 30 C18 32, 20 34, 20 36 L24 40 L20 42 C18 44, 18 48, 20 50 L24 54 C28 58, 32 58, 34 54 L34 48" />
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        {/* 옆모습 얼굴: 이마 곡선 → 눈썹 → 코 → 입 → 턱 */}
+        <path d="M30 15 C24 15, 18 20, 16 28 C14 36, 16 38, 20 40 L26 44 C28 45, 28 47, 26 48 L22 50 C18 52, 20 56, 24 58 C28 60, 32 58, 34 54 L36 48" fill="none" />
         {/* 눈 */}
-        <circle cx="24" cy="24" r="2" fill="currentColor" />
-        {/* 손가락 (입 앞 세로 — 쉿 포즈) */}
-        <line x1="40" y1="18" x2="40" y2="50" strokeWidth="3.5" />
-        {/* 손바닥 */}
-        <path d="M36 50 C36 54, 38 56, 40 56 C42 56, 44 54, 44 50" />
-        {/* 접힌 나머지 손가락 */}
-        <path d="M44 50 C46 50, 47 48, 47 46 C47 44, 46 42, 44 42" />
-        <path d="M36 50 C34 50, 33 48, 33 46 C33 44, 34 42, 36 42" />
-        {/* 소리 파동 + 금지 */}
-        <path d="M52 28 C54 32, 54 38, 52 42" />
-        <line x1="50" y1="26" x2="56" y2="44" strokeWidth="2.5" />
+        <circle cx="26" cy="30" r="2.5" fill="currentColor" stroke="none" />
+        {/* 손가락 (세로 — 입 앞에 "쉿") */}
+        <path d="M46 16 L46 52" strokeWidth="4" />
+        {/* 손가락 끝 둥글게 */}
+        <circle cx="46" cy="14" r="2" fill="currentColor" stroke="none" />
+        {/* 손 (손가락 잡은 주먹) */}
+        <path d="M42 52 C40 54, 40 58, 42 60 L50 60 C52 58, 52 54, 50 52" />
+        {/* 지그재그 물결 (쉿 소리 표현) — 손 아래 */}
+        <path d="M38 66 L41 62 L44 66 L47 62 L50 66 L53 62 L56 66" strokeWidth="2.5" />
       </svg>
     ),
   },
