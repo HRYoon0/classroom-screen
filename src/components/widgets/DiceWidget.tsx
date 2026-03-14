@@ -50,47 +50,47 @@ export default function DiceWidget() {
     // 1: 흔들기 (준비)
     setPhase('shake');
 
-    // 2: 위로 던지기
-    t(300, () => setPhase('throw'));
+    // 2: 위로 던지기 (충분히 오래 보이도록)
+    t(400, () => setPhase('throw'));
 
-    // 3: 공중 회전
-    t(500, () => setPhase('spin'));
+    // 3: 공중 최고점에서 회전
+    t(900, () => setPhase('spin'));
 
     // 4: 낙하
-    t(800, () => setPhase('fall'));
+    t(1300, () => setPhase('fall'));
 
     // 5: 첫 바운스 (높게)
-    t(950, () => {
+    t(1550, () => {
       setPhase('bounce1');
+      setShowImpact(true);
+      setTimeout(() => setShowImpact(false), 250);
+    });
+
+    // 6: 두 번째 낙하
+    t(1750, () => setPhase('fall2'));
+
+    // 7: 두 번째 바운스
+    t(1900, () => {
+      setPhase('bounce2');
       setShowImpact(true);
       setTimeout(() => setShowImpact(false), 200);
     });
 
-    // 6: 두 번째 낙하
-    t(1100, () => setPhase('fall2'));
-
-    // 7: 두 번째 바운스
-    t(1200, () => {
-      setPhase('bounce2');
-      setShowImpact(true);
-      setTimeout(() => setShowImpact(false), 150);
-    });
-
     // 8: 세 번째 낙하
-    t(1320, () => setPhase('fall3'));
+    t(2050, () => setPhase('fall3'));
 
-    // 9: 세 번째 바운스 (미세)
-    t(1380, () => setPhase('bounce3'));
+    // 9: 세 번째 바운스
+    t(2150, () => setPhase('bounce3'));
 
     // 10: 안정
-    t(1450, () => {
+    t(2300, () => {
       clearInterval(shuffleRef.current);
       setValues(Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1));
       setPhase('settle');
     });
 
     // 11: 완료
-    t(1650, () => {
+    t(2550, () => {
       setPhase('done');
       setIsRolling(false);
       try {
@@ -119,19 +119,19 @@ export default function DiceWidget() {
         return {
           transform: `translateY(-280px) rotate(${r * 5 * dir}deg) scale(0.6)`,
           opacity: 0.7,
-          transition: 'transform 0.3s cubic-bezier(0.2, 0, 0.3, 1), opacity 0.2s',
+          transition: 'transform 0.5s cubic-bezier(0.2, 0, 0.3, 1), opacity 0.2s',
         };
       case 'spin':
         return {
           transform: `translateY(-200px) rotate(${1080 * dir + r * 3}deg) scale(0.7)`,
           opacity: 0.85,
-          transition: 'transform 0.3s linear, opacity 0.1s',
+          transition: 'transform 0.4s linear, opacity 0.1s',
         };
       case 'fall':
         return {
           transform: `translateY(25px) rotate(${1440 * dir + r * 2}deg) scale(1.15)`,
           opacity: 1,
-          transition: 'transform 0.25s cubic-bezier(0.6, 0, 1, 1), opacity 0.1s',
+          transition: 'transform 0.35s cubic-bezier(0.6, 0, 1, 1), opacity 0.1s',
         };
       case 'bounce1':
         return {
