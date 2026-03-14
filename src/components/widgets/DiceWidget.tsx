@@ -123,39 +123,39 @@ export default function DiceWidget() {
         };
       case 'spin':
         return {
-          transform: `translateY(-200px) rotate(${360 * dir + r * 3}deg) scale(0.7)`,
+          transform: `translateY(-200px) rotate(${1080 * dir + r * 3}deg) scale(0.7)`,
           opacity: 0.85,
           transition: 'transform 0.3s linear, opacity 0.1s',
         };
       case 'fall':
         return {
-          transform: `translateY(25px) rotate(${720 * dir + r * 2}deg) scale(1.1)`,
+          transform: `translateY(25px) rotate(${1440 * dir + r * 2}deg) scale(1.15)`,
           opacity: 1,
           transition: 'transform 0.25s cubic-bezier(0.6, 0, 1, 1), opacity 0.1s',
         };
       case 'bounce1':
         return {
-          transform: `translateY(-70px) translateX(${x * 1.5}px) rotate(${720 * dir + r}deg) scale(1)`,
+          transform: `translateY(-110px) translateX(${x * 2}px) rotate(${1440 * dir + r}deg) scale(1)`,
           transition: 'transform 0.15s cubic-bezier(0.3, 0, 0.2, 1)',
         };
       case 'fall2':
         return {
-          transform: `translateY(12px) translateX(${x}px) rotate(${720 * dir + r * 0.5}deg) scale(1.04)`,
+          transform: `translateY(15px) translateX(${x * 1.2}px) rotate(${1440 * dir + r * 0.5}deg) scale(1.06)`,
           transition: 'transform 0.12s cubic-bezier(0.6, 0, 1, 1)',
         };
       case 'bounce2':
         return {
-          transform: `translateY(-28px) translateX(${x * 0.6}px) rotate(${720 * dir + r * 0.3}deg) scale(1)`,
+          transform: `translateY(-50px) translateX(${x * 0.7}px) rotate(${1440 * dir + r * 0.3}deg) scale(1)`,
           transition: 'transform 0.1s cubic-bezier(0.3, 0, 0.2, 1)',
         };
       case 'fall3':
         return {
-          transform: `translateY(5px) translateX(${x * 0.3}px) rotate(${720 * dir + r * 0.15}deg) scale(1.01)`,
+          transform: `translateY(8px) translateX(${x * 0.4}px) rotate(${1440 * dir + r * 0.15}deg) scale(1.02)`,
           transition: 'transform 0.08s cubic-bezier(0.6, 0, 1, 1)',
         };
       case 'bounce3':
         return {
-          transform: `translateY(-8px) translateX(${x * 0.15}px) rotate(${720 * dir + r * 0.08}deg) scale(1)`,
+          transform: `translateY(-15px) translateX(${x * 0.2}px) rotate(${1440 * dir + r * 0.08}deg) scale(1)`,
           transition: 'transform 0.06s cubic-bezier(0.3, 0, 0.2, 1)',
         };
       case 'settle':
@@ -179,20 +179,45 @@ export default function DiceWidget() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px', overflow: 'hidden', position: 'relative' }}>
 
-      {/* 충격파 이펙트 */}
+      {/* 충격파 이펙트 (2중) */}
       {showImpact && (
-        <div style={{
-          position: 'absolute',
-          left: '50%',
-          top: '55%',
-          width: '200px',
-          height: '200px',
-          transform: 'translate(-50%, -50%)',
-          borderRadius: '50%',
-          border: '3px solid rgba(99,102,241,0.3)',
-          animation: 'impact-wave 0.4s ease-out forwards',
-          pointerEvents: 'none',
-        }} />
+        <>
+          <div style={{
+            position: 'absolute', left: '50%', top: '55%',
+            width: '20px', height: '20px',
+            transform: 'translate(-50%, -50%)',
+            borderRadius: '50%',
+            border: '4px solid rgba(99,102,241,0.5)',
+            animation: 'impact-wave 0.5s ease-out forwards',
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute', left: '50%', top: '55%',
+            width: '20px', height: '20px',
+            transform: 'translate(-50%, -50%)',
+            borderRadius: '50%',
+            border: '3px solid rgba(99,102,241,0.3)',
+            animation: 'impact-wave 0.5s ease-out 0.1s forwards',
+            pointerEvents: 'none',
+          }} />
+          {/* 착지 파편 */}
+          {Array.from({ length: 8 }).map((_, i) => {
+            const angle = i * 45;
+            return (
+              <div key={i} style={{
+                position: 'absolute', left: '50%', top: '55%',
+                width: '6px', height: '6px',
+                borderRadius: '50%',
+                background: '#6366f1',
+                opacity: 0,
+                animation: `impact-spark 0.4s ease-out forwards`,
+                '--spark-x': `${Math.cos(angle * Math.PI / 180) * 60}px`,
+                '--spark-y': `${Math.sin(angle * Math.PI / 180) * 40}px`,
+                pointerEvents: 'none',
+              } as React.CSSProperties} />
+            );
+          })}
+        </>
       )}
 
       {/* 주사위 영역 */}
@@ -260,7 +285,11 @@ export default function DiceWidget() {
         }
         @keyframes impact-wave {
           0% { width: 20px; height: 20px; opacity: 0.8; border-width: 4px; }
-          100% { width: 250px; height: 250px; opacity: 0; border-width: 1px; }
+          100% { width: 300px; height: 300px; opacity: 0; border-width: 1px; }
+        }
+        @keyframes impact-spark {
+          0% { transform: translate(-50%, -50%) translate(0, 0) scale(1); opacity: 0.9; }
+          100% { transform: translate(-50%, -50%) translate(var(--spark-x), var(--spark-y)) scale(0); opacity: 0; }
         }
       `}</style>
     </div>
