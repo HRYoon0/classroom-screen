@@ -1,4 +1,4 @@
-// Google Drive API 연동 - 팝업 방식 OAuth + appDataFolder
+// Google Drive API 연동 - GIS(Google Identity Services) + appDataFolder
 
 const CLIENT_ID = '739342381531-n47l404ioq2a9pssu0unha5sv5j75vit.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/drive.appdata openid profile email';
@@ -10,6 +10,7 @@ const FILE_ID_KEY = 'classboard-file-id';
 
 let accessToken: string | null = localStorage.getItem(TOKEN_KEY);
 let cachedFileId: string | null = localStorage.getItem(FILE_ID_KEY);
+let tokenClient: google.accounts.oauth2.TokenClient | null = null;
 
 export interface CloudData {
   widgets: unknown[];
@@ -25,82 +26,73 @@ function saveToken(token: string, expiresIn: number) {
   localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiryTime));
 }
 
-// 토큰 만료 여부 확인 (API 호출 없이)
+// 토큰 만료 여부 확인
 function isTokenExpired(): boolean {
   const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
   if (!expiry) return true;
-  // 5분 여유를 두고 만료 판정
   return Date.now() > Number(expiry) - 5 * 60 * 1000;
 }
 
-// 팝업 방식 로그인 - Promise로 토큰 반환
-function openAuthPopup(prompt: string): Promise<string> {
+// GIS 초기화 — 앱 시작 시 1회 호출
+export function initGis(): Promise<void> {
   return new Promise((resolve, reject) => {
-    const redirectUri = window.location.origin;
-    const params = new URLSearchParams({
-      client_id: CLIENT_ID,
-      redirect_uri: redirectUri,
-      response_type: 'token',
-      scope: SCOPES,
-      include_granted_scopes: 'true',
-      prompt,
-    });
-
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-    const w = prompt === 'none' ? 1 : 500;
-    const h = prompt === 'none' ? 1 : 600;
-    const left = prompt === 'none' ? -100 : window.screenX + (window.outerWidth - w) / 2;
-    const top = prompt === 'none' ? -100 : window.screenY + (window.outerHeight - h) / 2;
-    const popup = window.open(url, 'google-auth', `width=${w},height=${h},left=${left},top=${top}`);
-
-    if (!popup) {
-      reject(new Error('팝업이 차단되었습니다'));
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      clearInterval(timer);
-      try { popup.close(); } catch { /* 무시 */ }
-      reject(new Error('시간 초과'));
-    }, prompt === 'none' ? 8000 : 120000);
-
-    const timer = setInterval(() => {
-      try {
-        if (popup.closed) {
-          clearInterval(timer);
-          clearTimeout(timeout);
-          reject(new Error('로그인 취소'));
-          return;
-        }
-        const popupUrl = popup.location.href;
-        if (popupUrl.startsWith(redirectUri)) {
-          clearInterval(timer);
-          clearTimeout(timeout);
-
-          if (popupUrl.includes('#')) {
-            const hashParams = new URLSearchParams(popup.location.hash.substring(1));
-            popup.close();
-            const token = hashParams.get('access_token');
-            const expiresIn = Number(hashParams.get('expires_in') || '3600');
-            if (token) {
-              saveToken(token, expiresIn);
-              resolve(token);
-              return;
-            }
-          }
-          popup.close();
-          reject(new Error('토큰을 받지 못했습니다'));
-        }
-      } catch {
-        // cross-origin 에러 무시
+    const tryInit = () => {
+      if (typeof google !== 'undefined' && google.accounts?.oauth2) {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+          client_id: CLIENT_ID,
+          scope: SCOPES,
+          callback: () => {}, // 호출 시점에 동적 교체
+        });
+        resolve();
       }
-    }, 200);
+    };
+
+    // 이미 로드됨
+    tryInit();
+    if (tokenClient) return;
+
+    // 아직 로드 안 됨 → 폴링
+    let attempts = 0;
+    const check = setInterval(() => {
+      attempts++;
+      tryInit();
+      if (tokenClient || attempts > 100) {
+        clearInterval(check);
+        if (!tokenClient) reject(new Error('GIS 로드 실패'));
+      }
+    }, 100);
   });
 }
 
-// 사용자 로그인 (계정 선택 팝업)
+// 사용자 로그인 (GIS 팝업)
 export function signIn(): Promise<string> {
-  return openAuthPopup('select_account');
+  return new Promise((resolve, reject) => {
+    if (!tokenClient) { reject(new Error('GIS 미초기화')); return; }
+
+    tokenClient.callback = (response: google.accounts.oauth2.TokenResponse) => {
+      if (response.error) { reject(new Error(response.error_description || response.error)); return; }
+      saveToken(response.access_token, response.expires_in);
+      resolve(response.access_token);
+    };
+
+    // prompt '' → 이전 동의 있으면 자동, 없으면 계정 선택
+    tokenClient.requestAccessToken({ prompt: '' });
+  });
+}
+
+// 자동 갱신 (prompt: 'none' — 팝업 없이 iframe으로)
+function silentRefresh(): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!tokenClient) { reject(new Error('GIS 미초기화')); return; }
+
+    tokenClient.callback = (response: google.accounts.oauth2.TokenResponse) => {
+      if (response.error) { reject(new Error(response.error)); return; }
+      saveToken(response.access_token, response.expires_in);
+      resolve(response.access_token);
+    };
+
+    tokenClient.requestAccessToken({ prompt: 'none' });
+  });
 }
 
 // 로그아웃
@@ -117,21 +109,29 @@ export function isSignedIn() {
 }
 
 // 앱 시작 / 탭 복귀 시 세션 복원
-// 반환: 'valid' | 'expired' | 'none'
 export async function restoreSession(): Promise<'valid' | 'expired' | 'none'> {
   if (!accessToken) return 'none';
 
-  // 만료 시각 기반 확인 (API 호출 없음, 팝업 없음)
+  // 만료 전이면 즉시 유효
   if (!isTokenExpired()) return 'valid';
 
-  // 만료됨 — 로그아웃하지 않고 만료 상태만 알림
-  // 사용자가 재로그인 버튼을 클릭하면 그때 팝업 열림
-  return 'expired';
+  // 만료됨 → GIS prompt:'none'으로 자동 갱신 시도 (팝업 없음, iframe 사용)
+  try {
+    await silentRefresh();
+    return 'valid';
+  } catch {
+    // Google 세션 쿠키 만료 등 → 수동 재로그인 필요
+    return 'expired';
+  }
 }
 
-// 재로그인 (사용자 클릭에 의해 호출 → 팝업 차단 안 됨)
-export function reSignIn(): Promise<string> {
-  return openAuthPopup('none').catch(() => openAuthPopup('select_account'));
+// 재로그인 (사용자 클릭으로 호출)
+export async function reSignIn(): Promise<string> {
+  try {
+    return await silentRefresh();
+  } catch {
+    return signIn();
+  }
 }
 
 // appDataFolder에서 파일 ID 찾기
@@ -150,7 +150,6 @@ async function findFileId(useCache = true): Promise<string | null> {
 // 구글 드라이브에서 데이터 로드
 export async function loadFromDrive(): Promise<CloudData | null> {
   if (!accessToken) return null;
-
   try {
     if (cachedFileId) {
       const res = await fetch(
@@ -161,10 +160,8 @@ export async function loadFromDrive(): Promise<CloudData | null> {
       cachedFileId = null;
       localStorage.removeItem(FILE_ID_KEY);
     }
-
     const fileId = await findFileId(false);
     if (!fileId) return null;
-
     const res = await fetch(
       `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -179,43 +176,27 @@ export async function loadFromDrive(): Promise<CloudData | null> {
 // 구글 드라이브에 데이터 저장
 export async function saveToDrive(data: CloudData): Promise<boolean> {
   if (!accessToken) return false;
-
   try {
     const fileId = await findFileId();
     const body = JSON.stringify(data);
-
     if (fileId) {
       const res = await fetch(
         `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
         {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
           body,
         }
       );
       return res.ok;
     } else {
-      const metadata = {
-        name: FILE_NAME,
-        parents: ['appDataFolder'],
-      };
+      const metadata = { name: FILE_NAME, parents: ['appDataFolder'] };
       const form = new FormData();
-      form.append(
-        'metadata',
-        new Blob([JSON.stringify(metadata)], { type: 'application/json' })
-      );
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
       form.append('file', new Blob([body], { type: 'application/json' }));
-
       const res = await fetch(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
-          body: form,
-        }
+        { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: form }
       );
       if (res.ok) {
         const created = await res.json();

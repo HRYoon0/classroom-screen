@@ -16,6 +16,7 @@ import {
   getUserInfo,
   restoreSession,
   reSignIn,
+  initGis,
 } from './services/googleDrive';
 
 function App() {
@@ -147,9 +148,9 @@ function App() {
     }
   };
 
-  // 페이지 로드 시: 저장된 토큰 검증 + 만료 시 자동 갱신
+  // 페이지 로드 시: GIS 초기화 후 세션 복원
   useEffect(() => {
-    tryRestoreSession();
+    initGis().then(() => tryRestoreSession()).catch(() => {});
   }, [tryRestoreSession]);
 
   // 탭이 다시 활성화될 때 토큰 검증 + 갱신
