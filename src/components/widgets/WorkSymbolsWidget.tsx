@@ -1,35 +1,265 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
-const SYMBOLS = [
-  { icon: '🤫', label: '조용히', color: 'bg-red-50 border-red-200 text-red-700' },
-  { icon: '👀', label: '주목', color: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
-  { icon: '✍️', label: '쓰기', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-  { icon: '👥', label: '짝활동', color: 'bg-green-50 border-green-200 text-green-700' },
-  { icon: '🗣️', label: '토론', color: 'bg-purple-50 border-purple-200 text-purple-700' },
-  { icon: '📖', label: '읽기', color: 'bg-orange-50 border-orange-200 text-orange-700' },
-  { icon: '🎧', label: '듣기', color: 'bg-cyan-50 border-cyan-200 text-cyan-700' },
-  { icon: '🖥️', label: '컴퓨터', color: 'bg-indigo-50 border-indigo-200 text-indigo-700' },
+interface Symbol {
+  id: string;
+  label: string;
+  icon: (size: number) => React.ReactNode;
+}
+
+// SVG 라인 드로잉 스타일 아이콘들
+const SYMBOLS: Symbol[] = [
+  {
+    id: 'silence',
+    label: '조용히',
+    icon: (s) => (
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* 얼굴 옆모습 */}
+        <path d="M30 18 C28 18, 24 22, 24 28 C24 32, 26 34, 28 36 L28 40 C28 42, 26 44, 26 46 C26 50, 28 54, 32 56 C36 58, 38 56, 38 52 L38 44 C38 42, 40 40, 40 38 L40 28 C40 22, 36 18, 30 18Z" />
+        {/* 눈 */}
+        <circle cx="30" cy="28" r="1.5" fill="currentColor" />
+        {/* 쉿 손가락 */}
+        <line x1="42" y1="30" x2="42" y2="16" />
+        <line x1="42" y1="16" x2="42" y2="12" />
+        {/* 손 */}
+        <path d="M38 42 C38 42, 44 42, 46 40 C48 38, 48 34, 46 32 L46 22 C46 20, 44 18, 42 18" />
+        <path d="M46 32 C48 32, 50 34, 50 36 C50 38, 50 40, 48 42" />
+        {/* 파동 (소리 없음 표시) */}
+        <path d="M54 24 C56 26, 56 30, 54 32" strokeDasharray="2 2" />
+        <path d="M58 22 C62 26, 62 30, 58 34" strokeDasharray="2 2" />
+      </svg>
+    ),
+  },
+  {
+    id: 'listen',
+    label: '경청',
+    icon: (s) => (
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* 귀 */}
+        <path d="M40 16 C28 16, 20 26, 20 38 C20 48, 24 52, 28 56 C30 58, 30 62, 28 64" />
+        <path d="M40 16 C48 16, 54 22, 54 30 C54 36, 50 40, 46 42 C44 44, 44 48, 46 50" />
+        <path d="M34 38 C34 34, 38 30, 42 32 C44 34, 44 38, 42 40" />
+        {/* 소리 파동 */}
+        <path d="M58 26 C62 30, 62 38, 58 42" />
+        <path d="M62 22 C68 28, 68 40, 62 46" />
+        <path d="M66 18 C74 26, 74 42, 66 50" />
+      </svg>
+    ),
+  },
+  {
+    id: 'discuss',
+    label: '토론',
+    icon: (s) => (
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* 사람 1 */}
+        <circle cx="24" cy="24" r="8" />
+        <path d="M12 52 C12 42, 18 36, 24 36 C30 36, 36 42, 36 52" />
+        {/* 사람 2 */}
+        <circle cx="56" cy="24" r="8" />
+        <path d="M44 52 C44 42, 50 36, 56 36 C62 36, 68 42, 68 52" />
+        {/* 말풍선 */}
+        <path d="M30 18 L36 14 L36 22Z" fill="currentColor" />
+        <path d="M50 18 L44 14 L44 22Z" fill="currentColor" />
+        {/* 대화 표시 */}
+        <line x1="34" y1="56" x2="46" y2="56" strokeDasharray="3 3" />
+        <line x1="32" y1="60" x2="48" y2="60" strokeDasharray="3 3" />
+      </svg>
+    ),
+  },
+  {
+    id: 'question',
+    label: '질문',
+    icon: (s) => (
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* 사람 */}
+        <circle cx="32" cy="22" r="8" />
+        <path d="M20 52 C20 42, 26 36, 32 36 C38 36, 44 42, 44 52" />
+        {/* 손 들기 */}
+        <path d="M44 36 L52 20 L54 18" />
+        <path d="M52 20 C52 16, 56 14, 58 16" />
+        {/* 물음표 말풍선 */}
+        <rect x="50" y="8" width="22" height="20" rx="4" />
+        <path d="M58 14 C58 12, 62 12, 62 14 C62 16, 60 17, 60 19" />
+        <circle cx="60" cy="22" r="1" fill="currentColor" />
+        <path d="M56 28 L54 34" />
+      </svg>
+    ),
+  },
+  {
+    id: 'write',
+    label: '쓰기',
+    icon: (s) => (
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* 연필 */}
+        <path d="M20 60 L50 20 L56 24 L26 64 Z" />
+        <line x1="50" y1="20" x2="56" y2="24" />
+        <line x1="46" y1="28" x2="52" y2="32" />
+        <path d="M20 60 L18 66 L26 64" />
+        {/* 종이 */}
+        <rect x="30" y="40" width="30" height="30" rx="2" />
+        <line x1="36" y1="48" x2="54" y2="48" />
+        <line x1="36" y1="54" x2="54" y2="54" />
+        <line x1="36" y1="60" x2="48" y2="60" />
+      </svg>
+    ),
+  },
+  {
+    id: 'read',
+    label: '읽기',
+    icon: (s) => (
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* 펼친 책 */}
+        <path d="M40 22 C40 22, 28 18, 16 20 L16 58 C28 56, 40 60, 40 60" />
+        <path d="M40 22 C40 22, 52 18, 64 20 L64 58 C52 56, 40 60, 40 60" />
+        <line x1="40" y1="22" x2="40" y2="60" />
+        {/* 글줄 */}
+        <line x1="22" y1="30" x2="34" y2="28" />
+        <line x1="22" y1="36" x2="34" y2="34" />
+        <line x1="22" y1="42" x2="34" y2="40" />
+        <line x1="46" y1="28" x2="58" y2="30" />
+        <line x1="46" y1="34" x2="58" y2="36" />
+        <line x1="46" y1="40" x2="58" y2="42" />
+      </svg>
+    ),
+  },
+  {
+    id: 'pair',
+    label: '짝활동',
+    icon: (s) => (
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* 사람 1 */}
+        <circle cx="28" cy="26" r="8" />
+        <path d="M16 56 C16 44, 22 38, 28 38 C34 38, 40 44, 40 56" />
+        {/* 사람 2 */}
+        <circle cx="52" cy="26" r="8" />
+        <path d="M40 56 C40 44, 46 38, 52 38 C58 38, 64 44, 64 56" />
+        {/* 연결 화살표 */}
+        <path d="M36 30 L44 30" strokeDasharray="2 2" />
+      </svg>
+    ),
+  },
+  {
+    id: 'computer',
+    label: '컴퓨터',
+    icon: (s) => (
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        {/* 모니터 */}
+        <rect x="14" y="14" width="52" height="36" rx="3" />
+        <rect x="18" y="18" width="44" height="28" rx="1" />
+        {/* 받침대 */}
+        <line x1="40" y1="50" x2="40" y2="58" />
+        <line x1="28" y1="58" x2="52" y2="58" />
+        {/* 키보드 */}
+        <rect x="22" y="62" width="36" height="8" rx="2" />
+        <line x1="28" y1="66" x2="52" y2="66" />
+      </svg>
+    ),
+  },
 ];
 
 export default function WorkSymbolsWidget() {
-  const [active, setActive] = useState<number | null>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [showPicker, setShowPicker] = useState(false);
+
+  const handleClick = useCallback(() => {
+    setShowPicker(true);
+  }, []);
+
+  const handleRelease = useCallback(() => {
+    setShowPicker(false);
+  }, []);
+
+  const handleSelect = useCallback((idx: number) => {
+    setActiveIdx(idx);
+    setShowPicker(false);
+  }, []);
+
+  const active = SYMBOLS[activeIdx];
 
   return (
-    <div className="flex items-center justify-center h-full gap-1.5 flex-wrap">
-      {SYMBOLS.map((sym, i) => (
-        <button
-          key={i}
-          onClick={() => setActive(active === i ? null : i)}
-          className={`flex flex-col items-center px-2 py-1.5 rounded-lg border transition-all ${
-            active === i
-              ? `${sym.color} scale-110 shadow-md`
-              : 'border-transparent hover:bg-slate-50 opacity-50 hover:opacity-80'
-          }`}
-        >
-          <span className="text-xl">{sym.icon}</span>
-          <span className="text-[9px] font-medium">{sym.label}</span>
-        </button>
-      ))}
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        position: 'relative',
+        cursor: 'pointer',
+        userSelect: 'none',
+      }}
+      onMouseDown={handleClick}
+      onMouseUp={handleRelease}
+      onMouseLeave={handleRelease}
+    >
+      {/* 메인 원형 아이콘 */}
+      <div style={{
+        width: '180px',
+        height: '180px',
+        borderRadius: '50%',
+        background: '#f8fafc',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+        color: '#1e293b',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        transform: showPicker ? 'scale(0.92)' : 'scale(1)',
+      }}>
+        {active.icon(80)}
+        <span style={{
+          fontSize: '18px',
+          fontWeight: 600,
+          color: '#475569',
+          marginTop: '4px',
+        }}>
+          {active.label}
+        </span>
+      </div>
+
+      {/* 하단 선택 바 — 클릭(마우스 누르고 있을 때)만 표시 */}
+      {showPicker && (
+        <div style={{
+          position: 'absolute',
+          bottom: '0',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          gap: '8px',
+          animation: 'picker-in 0.2s ease-out',
+        }}>
+          {SYMBOLS.map((sym, i) => (
+            <button
+              key={sym.id}
+              onMouseEnter={() => handleSelect(i)}
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                border: activeIdx === i ? '2px solid #6366f1' : '2px solid #e2e8f0',
+                background: 'white',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: activeIdx === i ? '#6366f1' : '#64748b',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                transition: 'all 0.15s',
+                padding: 0,
+              }}
+            >
+              {sym.icon(28)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes picker-in {
+          from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }
