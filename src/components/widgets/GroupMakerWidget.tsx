@@ -5,6 +5,17 @@ interface Props {
   onConfigChange: (config: Record<string, unknown>) => void;
 }
 
+const GROUP_COLORS = [
+  { bg: '#eff6ff', border: '#bfdbfe' },
+  { bg: '#fdf2f8', border: '#fbcfe8' },
+  { bg: '#f0fdf4', border: '#bbf7d0' },
+  { bg: '#fefce8', border: '#fde68a' },
+  { bg: '#faf5ff', border: '#e9d5ff' },
+  { bg: '#fff7ed', border: '#fed7aa' },
+  { bg: '#ecfeff', border: '#a5f3fc' },
+  { bg: '#fff1f2', border: '#fecdd3' },
+];
+
 export default function GroupMakerWidget({ config, onConfigChange }: Props) {
   const nameList = ((config.names as string) || '').trim();
   const groupCount = (config.groupCount as number) || 4;
@@ -25,51 +36,44 @@ export default function GroupMakerWidget({ config, onConfigChange }: Props) {
     setGroups(result);
   };
 
-  const COLORS = [
-    'bg-blue-50 border-blue-200',
-    'bg-pink-50 border-pink-200',
-    'bg-green-50 border-green-200',
-    'bg-yellow-50 border-yellow-200',
-    'bg-purple-50 border-purple-200',
-    'bg-orange-50 border-orange-200',
-    'bg-cyan-50 border-cyan-200',
-    'bg-rose-50 border-rose-200',
-  ];
-
   if (showInput || names.length === 0) {
     return (
-      <div className="flex flex-col h-full gap-2">
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
         <textarea
-          className="flex-1 w-full p-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 text-slate-700"
-          placeholder="학생 이름을 한 줄에 하나씩 입력하세요"
+          style={{
+            flex: 1, width: '100%', padding: '14px', border: '2px solid #e2e8f0',
+            borderRadius: '10px', fontSize: '18px', lineHeight: 1.6, resize: 'none',
+            outline: 'none', color: '#334155', background: '#f8fafc', boxSizing: 'border-box',
+          }}
+          placeholder={'학생 이름을 한 줄에 하나씩 입력하세요'}
           value={nameList}
           onChange={(e) => onConfigChange({ names: e.target.value })}
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         />
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-slate-500">모둠 수:</label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '16px', color: '#64748b' }}>모둠 수:</span>
           <select
             value={groupCount}
             onChange={(e) => onConfigChange({ groupCount: Number(e.target.value) })}
-            className="border border-slate-200 rounded px-2 py-1 text-sm text-slate-700"
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              padding: '8px 12px', border: '2px solid #e2e8f0', borderRadius: '8px',
+              fontSize: '16px', color: '#334155', outline: 'none',
+            }}
           >
             {[2, 3, 4, 5, 6, 7, 8].map((n) => (
-              <option key={n} value={n}>
-                {n}개
-              </option>
+              <option key={n} value={n}>{n}개</option>
             ))}
           </select>
           <button
             onClick={() => names.length > 0 && setShowInput(false)}
             disabled={names.length === 0}
             style={{
-              marginLeft: 'auto',
-              padding: '8px 16px',
+              marginLeft: 'auto', padding: '10px 20px',
               background: names.length === 0 ? '#cbd5e1' : '#6366f1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: 600,
+              color: 'white', border: 'none', borderRadius: '8px',
+              fontSize: '16px', fontWeight: 600,
               cursor: names.length === 0 ? 'default' : 'pointer',
             }}
           >
@@ -81,40 +85,50 @@ export default function GroupMakerWidget({ config, onConfigChange }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full gap-2">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
       {groups.length > 0 ? (
-        <div className="flex-1 grid grid-cols-2 gap-2 overflow-auto no-scrollbar">
-          {groups.map((group, i) => (
-            <div
-              key={i}
-              className={`rounded-lg border p-2 ${COLORS[i % COLORS.length]}`}
-            >
-              <p className="text-xs font-bold text-slate-600 mb-1">
-                {i + 1}모둠
-              </p>
-              {group.map((name, j) => (
-                <p key={j} className="text-sm text-slate-700">
-                  {name}
+        <div style={{
+          flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '10px', overflowY: 'auto',
+        }}>
+          {groups.map((group, i) => {
+            const c = GROUP_COLORS[i % GROUP_COLORS.length];
+            return (
+              <div key={i} style={{
+                borderRadius: '10px', border: `2px solid ${c.border}`,
+                background: c.bg, padding: '12px',
+              }}>
+                <p style={{ fontSize: '16px', fontWeight: 700, color: '#475569', marginBottom: '6px' }}>
+                  {i + 1}모둠
                 </p>
-              ))}
-            </div>
-          ))}
+                {group.map((name, j) => (
+                  <p key={j} style={{ fontSize: '18px', color: '#334155', lineHeight: 1.6 }}>{name}</p>
+                ))}
+              </div>
+            );
+          })}
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '18px' }}>
           아래 버튼을 눌러 모둠을 만드세요
         </div>
       )}
-      <div className="flex gap-2 shrink-0">
+      <div style={{ display: 'flex', gap: '10px', flexShrink: 0 }}>
         <button
           onClick={shuffle}
-          className="flex-1 h-8 px-3 bg-indigo-500 text-white rounded text-[13px] font-semibold hover:bg-indigo-600"
+          style={{
+            flex: 1, padding: '12px', borderRadius: '10px', border: 'none',
+            background: '#6366f1', color: 'white', fontSize: '18px', fontWeight: 600, cursor: 'pointer',
+          }}
         >
           🔀 섞기!
         </button>
         <button
           onClick={() => setShowInput(true)}
-          className="h-8 px-4 bg-slate-100 text-slate-600 rounded text-[13px] font-semibold hover:bg-slate-200"
+          style={{
+            padding: '12px 20px', borderRadius: '10px', border: 'none',
+            background: '#f1f5f9', color: '#475569', fontSize: '18px', fontWeight: 600, cursor: 'pointer',
+          }}
         >
           수정
         </button>
