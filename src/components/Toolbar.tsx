@@ -15,6 +15,7 @@ import {
   IoDiceOutline,
   IoListOutline,
   IoCalendarOutline,
+  IoColorWandOutline,
   IoAppsOutline,
   IoChevronDown,
 } from 'react-icons/io5';
@@ -35,7 +36,7 @@ function TrafficLightIcon() {
 
 const MAIN_ITEMS: { type: string; icon: React.ReactNode; color: string; label: string }[] = [
   { type: 'calendar',       icon: <IoCalendarOutline size={SZ} />,      color: '#0ea5e9', label: '달력' },
-  { type: 'poll',           icon: <IoBarChartOutline size={SZ} />,      color: '#6366f1', label: '투표' },
+  { type: 'roulette',       icon: <IoColorWandOutline size={SZ} />,     color: '#ec4899', label: '마블 룰렛' },
   { type: 'random-name',    icon: <IoPersonOutline size={SZ} />,        color: '#0ea5e9', label: '이름 뽑기' },
   { type: 'noise-meter',    icon: <IoVolumeHighOutline size={SZ} />,    color: '#22c55e', label: '소음 측정' },
   { type: 'text',           icon: <IoTextOutline size={SZ} />,          color: '#8b5cf6', label: '텍스트' },
@@ -46,6 +47,7 @@ const MAIN_ITEMS: { type: string; icon: React.ReactNode; color: string; label: s
 ];
 
 const EXTRA_ITEMS: typeof MAIN_ITEMS = [
+  { type: 'poll',           icon: <IoBarChartOutline size={SZ} />,      color: '#6366f1', label: '투표' },
   { type: 'stopwatch',      icon: <IoStopwatchOutline size={SZ} />,     color: '#14b8a6', label: '스톱워치' },
   { type: 'group-maker',    icon: <IoPeopleOutline size={SZ} />,        color: '#f97316', label: '모둠' },
   { type: 'drawing',        icon: <IoBrushOutline size={SZ} />,         color: '#ec4899', label: '그림판' },
@@ -103,7 +105,13 @@ export default function Toolbar({ onAddWidget, onOpenSettings }: Props) {
               icon={item.icon}
               color={item.color}
               label={item.label}
-              onClick={() => onAddWidget(item.type as WidgetType)}
+              onClick={() => {
+                if (item.type === 'roulette') {
+                  window.open('https://hryoon0.github.io/roulette/', '_blank');
+                } else {
+                  onAddWidget(item.type as WidgetType);
+                }
+              }}
             />
           ))}
 
