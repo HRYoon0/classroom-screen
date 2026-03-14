@@ -39,7 +39,7 @@ export default function TrafficLightWidget() {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
       {/* 신호등 하우징 */}
       {/* 신호등 하우징 */}
-      <div style={{ background: 'linear-gradient(to bottom, #64748b, #334155)', borderRadius: '56px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+      <div style={{ background: 'linear-gradient(to bottom, #64748b, #334155)', borderRadius: '42px', padding: '9px', display: 'flex', flexDirection: 'column', gap: '7px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
         {LIGHTS.map(({ color, activeColor, glowColor, dimColor }) => {
           const isActive = activeLight === color;
           return (
@@ -48,27 +48,26 @@ export default function TrafficLightWidget() {
               onClick={() => setActiveLight(activeLight === color ? 'off' : color)}
               style={{
                 position: 'relative',
-                width: 112,
-                height: 112,
+                width: 84,
+                height: 84,
                 borderRadius: '50%',
                 border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.3s',
                 backgroundColor: isActive ? activeColor : dimColor,
                 boxShadow: isActive
-                  ? `0 0 40px ${glowColor}, inset 0 -6px 12px rgba(0,0,0,0.2), 0 0 80px ${glowColor}`
-                  : 'inset 0 4px 8px rgba(0,0,0,0.3)',
+                  ? `0 0 30px ${glowColor}, inset 0 -4px 9px rgba(0,0,0,0.2), 0 0 60px ${glowColor}`
+                  : 'inset 0 3px 6px rgba(0,0,0,0.3)',
               }}
             >
-              {/* 하이라이트 반사광 */}
               {isActive && (
                 <div style={{
                   position: 'absolute',
-                  top: '6px',
+                  top: '4px',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  width: '48px',
-                  height: '24px',
+                  width: '36px',
+                  height: '18px',
                   borderRadius: '50%',
                   background: 'radial-gradient(ellipse, rgba(255,255,255,0.5) 0%, transparent 70%)',
                 }} />
@@ -77,16 +76,14 @@ export default function TrafficLightWidget() {
           );
         })}
       </div>
-      {/* 활성 라벨 - 신호등 아래 */}
       {activeLight !== 'off' && (
         <p style={{
-          marginTop: '16px',
-          fontSize: '28px',
+          fontSize: '22px',
           fontWeight: 700,
           color: LIGHTS.find((l) => l.color === activeLight)?.activeColor,
           textAlign: 'center',
-          textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          margin: '16px 0 0',
+          textShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          margin: '12px 0 0',
         }}>
           {LIGHTS.find((l) => l.color === activeLight)?.label}
         </p>
