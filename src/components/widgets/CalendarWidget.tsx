@@ -5,10 +5,21 @@ import { getHoliday } from '../../utils/koreanHolidays';
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const MONTHS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 
+type MemoColor = 'blue' | 'red';
+interface MemoData { text: string; color: MemoColor; }
+
 interface Props {
   config: Record<string, unknown>;
   onConfigChange: (config: Record<string, unknown>) => void;
   isSelected?: boolean;
+}
+
+// 기존 string 메모와 호환
+function parseMemo(val: unknown): MemoData | null {
+  if (!val) return null;
+  if (typeof val === 'string') return { text: val, color: 'blue' };
+  if (typeof val === 'object' && val !== null && 'text' in val) return val as MemoData;
+  return null;
 }
 
 export default function CalendarWidget({ config, onConfigChange, isSelected = false }: Props) {
@@ -18,17 +29,17 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [editColor, setEditColor] = useState<MemoColor>('blue');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 메모 데이터: config.memos = { "2026-3-14": "재량휴업일", ... }
-  const memos = (config.memos as Record<string, string>) || {};
+  const memos = (config.memos as Record<string, unknown>) || {};
 
-  const getMemo = (y: number, m: number, d: number) => memos[`${y}-${m}-${d}`] || '';
+  const getMemo = (y: number, m: number, d: number): MemoData | null => parseMemo(memos[`${y}-${m}-${d}`]);
 
-  const saveMemo = (key: string, text: string) => {
+  const saveMemo = (key: string, text: string, color: MemoColor) => {
     const newMemos = { ...memos };
     if (text.trim()) {
-      newMemos[key] = text.trim();
+      newMemos[key] = { text: text.trim(), color };
     } else {
       delete newMemos[key];
     }
@@ -37,14 +48,16 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
 
   const handleDateClick = (y: number, m: number, d: number) => {
     const key = `${y}-${m}-${d}`;
+    const existing = parseMemo(memos[key]);
     setEditingDate(key);
-    setEditText(memos[key] || '');
+    setEditText(existing?.text || '');
+    setEditColor(existing?.color || 'blue');
     setTimeout(() => inputRef.current?.focus(), 50);
   };
 
   const handleEditDone = () => {
     if (editingDate) {
-      saveMemo(editingDate, editText);
+      saveMemo(editingDate, editText, editColor);
       setEditingDate(null);
       setEditText('');
     }
@@ -120,9 +133,24 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
           const todayMatch = cell.current && isToday(cell.day);
           const holiday = cell.current ? getHoliday(year, month, cell.day) : null;
           const isHoliday = !!holiday;
-          const memo = cell.current ? getMemo(year, month, cell.day) : '';
+          const memo = cell.current ? getMemo(year, month, cell.day) : null;
           const hasMemo = !!memo;
+          const isRedMemo = hasMemo && memo.color === 'red';
           const isHovered = hoveredIdx === idx && (isHoliday || hasMemo);
+
+          // 빨강 메모는 공휴일처럼 날짜 빨간색
+          const dateColor = !cell.current
+            ? '#cbd5e1'
+            : todayMatch
+              ? 'white'
+              : (isHoliday || isSun || isRedMemo)
+                ? '#ef4444'
+                : isSat
+                  ? '#3b82f6'
+                  : '#334155';
+
+          // 점 색상 결정
+          const dotColor = hasMemo ? (memo.color === 'red' ? '#ef4444' : '#3b82f6') : null;
 
           return (
             <div
@@ -137,15 +165,7 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
                 justifyContent: 'center',
                 fontSize: '15px',
                 fontWeight: todayMatch ? 700 : 400,
-                color: !cell.current
-                  ? '#cbd5e1'
-                  : todayMatch
-                    ? 'white'
-                    : (isHoliday || isSun)
-                      ? '#ef4444'
-                      : isSat
-                        ? '#3b82f6'
-                        : '#334155',
+                color: dateColor,
                 background: todayMatch ? '#6366f1' : 'transparent',
                 borderRadius: todayMatch ? '50%' : '6px',
                 width: '36px',
@@ -157,25 +177,13 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
               }}
             >
               {cell.day}
-              {/* 공휴일 빨간 점 */}
-              {isHoliday && !todayMatch && !hasMemo && (
-                <div style={{
-                  position: 'absolute', bottom: '2px',
-                  width: '4px', height: '4px', borderRadius: '50%', background: '#ef4444',
-                }} />
-              )}
-              {/* 메모 파란 점 */}
-              {hasMemo && !todayMatch && !isHoliday && (
-                <div style={{
-                  position: 'absolute', bottom: '2px',
-                  width: '4px', height: '4px', borderRadius: '50%', background: '#3b82f6',
-                }} />
-              )}
-              {/* 공휴일 + 메모 둘 다 있으면 두 점 */}
-              {hasMemo && isHoliday && !todayMatch && (
+              {/* 점 표시 */}
+              {!todayMatch && (isHoliday || hasMemo) && (
                 <div style={{ position: 'absolute', bottom: '2px', display: 'flex', gap: '2px' }}>
-                  <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#ef4444' }} />
-                  <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#3b82f6' }} />
+                  {isHoliday && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#ef4444' }} />}
+                  {hasMemo && dotColor && !(isHoliday && dotColor === '#ef4444') && (
+                    <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: dotColor }} />
+                  )}
                 </div>
               )}
               {/* 툴팁 */}
@@ -188,7 +196,7 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
                   whiteSpace: 'nowrap', zIndex: 50, pointerEvents: 'none',
                   maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis',
                 }}>
-                  {[holiday, memo].filter(Boolean).join(' · ')}
+                  {[holiday, memo?.text].filter(Boolean).join(' · ')}
                 </div>
               )}
             </div>
@@ -201,17 +209,15 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
         <div
           style={{
             position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.3)',
-            borderRadius: '12px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            zIndex: 100,
+            background: 'rgba(0,0,0,0.3)', borderRadius: '12px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
           }}
           onClick={(e) => { if (e.target === e.currentTarget) handleEditDone(); }}
         >
           <div
             style={{
               background: 'white', borderRadius: '12px', padding: '16px',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.2)', width: '260px',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.2)', width: '280px',
             }}
             onClick={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
@@ -233,6 +239,32 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
                 color: '#334155', boxSizing: 'border-box',
               }}
             />
+            {/* 색상 선택 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px' }}>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>종류:</span>
+              <button
+                onClick={() => setEditColor('blue')}
+                style={{
+                  padding: '4px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: 600,
+                  background: editColor === 'blue' ? '#3b82f6' : '#f1f5f9',
+                  color: editColor === 'blue' ? 'white' : '#64748b',
+                }}
+              >
+                일반
+              </button>
+              <button
+                onClick={() => setEditColor('red')}
+                style={{
+                  padding: '4px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                  fontSize: '12px', fontWeight: 600,
+                  background: editColor === 'red' ? '#ef4444' : '#f1f5f9',
+                  color: editColor === 'red' ? 'white' : '#64748b',
+                }}
+              >
+                쉬는 날
+              </button>
+            </div>
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button
                 onClick={handleEditDone}
@@ -244,9 +276,9 @@ export default function CalendarWidget({ config, onConfigChange, isSelected = fa
               >
                 저장
               </button>
-              {memos[editingDate] && (
+              {parseMemo(memos[editingDate]) && (
                 <button
-                  onClick={() => { saveMemo(editingDate, ''); setEditingDate(null); setEditText(''); }}
+                  onClick={() => { saveMemo(editingDate, '', 'blue'); setEditingDate(null); setEditText(''); }}
                   style={{
                     padding: '8px 12px', borderRadius: '8px', border: 'none',
                     background: '#fef2f2', color: '#ef4444', fontSize: '13px',
