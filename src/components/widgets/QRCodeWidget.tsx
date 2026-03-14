@@ -28,7 +28,7 @@ export default function QRCodeWidget({ config, onConfigChange }: Props) {
           <p className="text-xs text-slate-500 max-w-full truncate px-2">{url}</p>
           <button
             onClick={() => onConfigChange({ url: '' })}
-            className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs hover:bg-slate-200"
+            className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200"
           >
             변경
           </button>
@@ -37,7 +37,7 @@ export default function QRCodeWidget({ config, onConfigChange }: Props) {
         <>
           <input
             type="text"
-            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-slate-700"
+            className="w-full px-3 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-slate-700"
             placeholder="URL을 입력하세요"
             value={inputUrl}
             onChange={(e) => setInputUrl(e.target.value)}
@@ -45,7 +45,7 @@ export default function QRCodeWidget({ config, onConfigChange }: Props) {
           />
           <button
             onClick={handleGenerate}
-            className="px-4 py-1.5 bg-indigo-500 text-white rounded-lg text-sm font-semibold hover:bg-indigo-600 disabled:opacity-50"
+            className="px-4 py-1.5 bg-indigo-500 text-white rounded text-sm font-semibold hover:bg-indigo-600 disabled:opacity-50"
             disabled={!inputUrl.trim()}
           >
             생성

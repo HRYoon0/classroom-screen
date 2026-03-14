@@ -45,7 +45,7 @@ function renderWidgetContent(
     case 'traffic-light':
       return <TrafficLightWidget />;
     case 'noise-meter':
-      return <NoiseMeterWidget />;
+      return <NoiseMeterWidget config={widget.config} onConfigChange={onConfigChange} />;
     case 'random-name':
       return <RandomNameWidget config={widget.config} onConfigChange={onConfigChange} />;
     case 'group-maker':
