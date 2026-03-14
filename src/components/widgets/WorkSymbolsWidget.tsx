@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 interface Symbol {
   id: string;
@@ -162,6 +162,24 @@ interface WidgetProps {
 
 export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [showPicker, setShowPicker] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const leaveTimer = useRef<number>(0);
+
+  // 선택 시 등장, 해제 시 퇴장 애니메이션 후 숨김
+  useEffect(() => {
+    if (isSelected) {
+      clearTimeout(leaveTimer.current);
+      setLeaving(false);
+      setShowPicker(true);
+    } else if (showPicker) {
+      setLeaving(true);
+      leaveTimer.current = window.setTimeout(() => {
+        setShowPicker(false);
+        setLeaving(false);
+      }, 400); // 퇴장 애니메이션 시간
+    }
+  }, [isSelected]);
 
   const handleSelect = useCallback((idx: number) => {
     setActiveIdx(idx);
@@ -208,8 +226,8 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
         </span>
       </div>
 
-      {/* 하단 선택 바 — 클릭(마우스 누르고 있을 때)만 표시 */}
-      {isSelected && (
+      {/* 하단 선택 바 */}
+      {showPicker && (
         <div style={{
           position: 'absolute',
           bottom: '0',
@@ -217,7 +235,6 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
           transform: 'translateX(-50%)',
           display: 'flex',
           gap: '8px',
-          animation: 'picker-in 0.2s ease-out',
         }}>
           {SYMBOLS.map((sym, i) => (
             <button
@@ -235,8 +252,11 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
                 justifyContent: 'center',
                 color: activeIdx === i ? '#6366f1' : '#64748b',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                transition: 'all 0.15s',
                 padding: 0,
+                animation: leaving
+                  ? `icon-out 0.25s ease-in ${i * 0.04}s forwards`
+                  : `icon-in 0.3s ease-out ${i * 0.05}s both`,
+                transition: 'border 0.15s, color 0.15s',
               }}
             >
               {sym.icon(28)}
@@ -246,9 +266,13 @@ export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
       )}
 
       <style>{`
-        @keyframes picker-in {
-          from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        @keyframes icon-in {
+          from { opacity: 0; transform: translateY(16px) scale(0.5); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes icon-out {
+          from { opacity: 1; transform: translateY(0) scale(1); }
+          to { opacity: 0; transform: translateY(16px) scale(0.5); }
         }
       `}</style>
     </div>
