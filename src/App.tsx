@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { IoExpand, IoContract, IoCloudUpload, IoCloudDownload } from 'react-icons/io5';
-import { useWidgetStore, loadBackground, saveBackground } from './store/widgetStore';
+import { useWidgetStore, loadBackground, saveBackground, getAllWidgetConfigs, setAllWidgetConfigs } from './store/widgetStore';
 import Toolbar from './components/Toolbar';
 import BackgroundPicker from './components/BackgroundPicker';
 import WidgetRenderer from './components/WidgetRenderer';
@@ -104,6 +104,9 @@ function App() {
           setBackground(data.background);
           saveBackground(data.background);
         }
+        if (data.widgetConfigs) {
+          setAllWidgetConfigs(data.widgetConfigs);
+        }
       }
       showMsg(`${info?.name || ''}님 로그인 완료`);
     } catch {
@@ -151,7 +154,7 @@ function App() {
     clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
       if (!isSignedIn()) return;
-      const ok = await saveToDrive({ widgets: widgetsRef.current, background: backgroundRef.current });
+      const ok = await saveToDrive({ widgets: widgetsRef.current, background: backgroundRef.current, widgetConfigs: getAllWidgetConfigs() });
       if (ok) showMsg('자동 저장 완료');
     }, 30000);
 
@@ -165,7 +168,7 @@ function App() {
       return;
     }
     setSyncing(true);
-    const ok = await saveToDrive({ widgets, background });
+    const ok = await saveToDrive({ widgets, background, widgetConfigs: getAllWidgetConfigs() });
     setSyncing(false);
     showMsg(ok ? '클라우드에 저장 완료' : '저장 실패');
   };
@@ -185,6 +188,9 @@ function App() {
       if (data.background) {
         setBackground(data.background);
         saveBackground(data.background);
+      }
+      if (data.widgetConfigs) {
+        setAllWidgetConfigs(data.widgetConfigs);
       }
       showMsg('클라우드에서 불러오기 완료');
     } else {

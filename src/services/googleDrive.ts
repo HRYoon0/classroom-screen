@@ -13,6 +13,7 @@ let cachedFileId: string | null = localStorage.getItem(FILE_ID_KEY);
 export interface CloudData {
   widgets: unknown[];
   background: string;
+  widgetConfigs?: Record<string, Record<string, unknown>>;
 }
 
 // 팝업 방식 로그인 - Promise로 토큰 반환

@@ -92,6 +92,22 @@ function loadWidgetConfig(type: WidgetType): Record<string, unknown> {
   }
 }
 
+// 전체 위젯 설정 가져오기/설정하기 (클라우드 동기화용)
+export function getAllWidgetConfigs(): Record<string, Record<string, unknown>> {
+  try {
+    const raw = localStorage.getItem(CONFIG_MEMORY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function setAllWidgetConfigs(configs: Record<string, Record<string, unknown>>) {
+  try {
+    localStorage.setItem(CONFIG_MEMORY_KEY, JSON.stringify(configs));
+  } catch { /* 무시 */ }
+}
+
 // 로컬 스토리지 키
 const STORAGE_KEY = 'classboard-widgets';
 const BG_STORAGE_KEY = 'classboard-bg';
