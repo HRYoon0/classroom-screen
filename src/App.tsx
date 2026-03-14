@@ -95,6 +95,7 @@ function App() {
     try {
       await signIn(); // 팝업에서 토큰 받을 때까지 대기
       setLoginLoading(true);
+      setSessionExpired(false);
       const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
       if (info) {
         setUser(info);
