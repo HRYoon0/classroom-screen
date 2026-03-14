@@ -14,6 +14,7 @@ import {
   saveToDrive,
   loadFromDrive,
   getUserInfo,
+  restoreSession,
 } from './services/googleDrive';
 
 function App() {
@@ -110,16 +111,14 @@ function App() {
     setLoginLoading(false);
   };
 
-  // 페이지 로드 시: 저장된 토큰이 있으면 세션 복구
+  // 페이지 로드 시: 저장된 토큰 검증 + 만료 시 자동 갱신
   useEffect(() => {
     if (isSignedIn()) {
       (async () => {
-        const info = await getUserInfo();
-        if (info) {
-          setUser(info);
-        } else {
-          // 토큰 만료 → 정리
-          signOut();
+        const valid = await restoreSession();
+        if (valid) {
+          const info = await getUserInfo();
+          if (info) setUser(info);
         }
       })();
     }

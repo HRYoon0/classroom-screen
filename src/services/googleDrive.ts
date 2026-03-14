@@ -84,6 +84,100 @@ export function isSignedIn() {
   return !!accessToken;
 }
 
+// 토큰 유효성 검증
+export async function validateToken(): Promise<boolean> {
+  if (!accessToken) return false;
+  try {
+    const res = await fetch(
+      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${accessToken}`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      // 남은 시간이 5분 미만이면 만료 임박으로 판단
+      return Number(data.expires_in) > 300;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+// 자동 토큰 갱신 (prompt=none으로 팝업 없이 시도)
+export function silentRefresh(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const redirectUri = window.location.origin;
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      redirect_uri: redirectUri,
+      response_type: 'token',
+      scope: SCOPES,
+      include_granted_scopes: 'true',
+      prompt: 'none',
+    });
+
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+    // 숨겨진 iframe으로 갱신 시도
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      resolve(null);
+    }, 10000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      window.removeEventListener('message', onMessage);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }
+
+    function onMessage() {
+      // iframe은 message 이벤트 대신 load 이벤트 사용
+    }
+
+    iframe.addEventListener('load', () => {
+      try {
+        const iframeUrl = iframe.contentWindow?.location.href;
+        if (iframeUrl && iframeUrl.startsWith(redirectUri) && iframeUrl.includes('#')) {
+          const hash = new URL(iframeUrl).hash;
+          const token = new URLSearchParams(hash.substring(1)).get('access_token');
+          if (token) {
+            accessToken = token;
+            localStorage.setItem(TOKEN_KEY, token);
+            cleanup();
+            resolve(token);
+            return;
+          }
+        }
+      } catch {
+        // cross-origin 에러 - Google이 거부한 경우
+      }
+      cleanup();
+      resolve(null);
+    });
+
+    window.addEventListener('message', onMessage);
+    document.body.appendChild(iframe);
+  });
+}
+
+// 앱 시작 시 토큰 확인 + 필요하면 갱신
+export async function restoreSession(): Promise<boolean> {
+  if (!accessToken) return false;
+
+  const valid = await validateToken();
+  if (valid) return true;
+
+  // 토큰 만료됨 → 자동 갱신 시도
+  const newToken = await silentRefresh();
+  if (newToken) return true;
+
+  // 갱신 실패 → 로그아웃 처리
+  signOut();
+  return false;
+}
+
 // appDataFolder에서 파일 ID 찾기
 async function findFileId(useCache = true): Promise<string | null> {
   if (useCache && cachedFileId) return cachedFileId;
