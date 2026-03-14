@@ -13,19 +13,22 @@ const SYMBOLS: Symbol[] = [
     label: '조용히',
     icon: (s) => (
       <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        {/* 얼굴 옆모습 */}
-        <path d="M30 18 C28 18, 24 22, 24 28 C24 32, 26 34, 28 36 L28 40 C28 42, 26 44, 26 46 C26 50, 28 54, 32 56 C36 58, 38 56, 38 52 L38 44 C38 42, 40 40, 40 38 L40 28 C40 22, 36 18, 30 18Z" />
+        {/* 얼굴 원형 */}
+        <circle cx="34" cy="40" r="18" />
         {/* 눈 */}
-        <circle cx="30" cy="28" r="1.5" fill="currentColor" />
-        {/* 쉿 손가락 */}
-        <line x1="42" y1="30" x2="42" y2="16" />
-        <line x1="42" y1="16" x2="42" y2="12" />
-        {/* 손 */}
-        <path d="M38 42 C38 42, 44 42, 46 40 C48 38, 48 34, 46 32 L46 22 C46 20, 44 18, 42 18" />
-        <path d="M46 32 C48 32, 50 34, 50 36 C50 38, 50 40, 48 42" />
-        {/* 파동 (소리 없음 표시) */}
-        <path d="M54 24 C56 26, 56 30, 54 32" strokeDasharray="2 2" />
-        <path d="M58 22 C62 26, 62 30, 58 34" strokeDasharray="2 2" />
+        <circle cx="28" cy="36" r="1.5" fill="currentColor" />
+        <circle cx="40" cy="36" r="1.5" fill="currentColor" />
+        {/* 입 */}
+        <line x1="31" y1="46" x2="37" y2="46" />
+        {/* 손가락 (입 앞에 세로) */}
+        <line x1="52" y1="22" x2="52" y2="48" strokeWidth="3" />
+        {/* 손 (손가락 아래) */}
+        <path d="M48 48 C48 52, 50 54, 52 54 C54 54, 56 52, 56 48" strokeWidth="2.5" />
+        <path d="M48 48 L48 52" strokeWidth="2" />
+        <path d="M56 48 L56 52" strokeWidth="2" />
+        {/* X 표시 (소리 안 됨) */}
+        <line x1="62" y1="30" x2="70" y2="38" strokeWidth="2" />
+        <line x1="70" y1="30" x2="62" y2="38" strokeWidth="2" />
       </svg>
     ),
   },
