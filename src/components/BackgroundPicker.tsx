@@ -42,52 +42,6 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
 
         {/* 스크롤 영역 */}
         <div style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
-          {/* 그라데이션 */}
-          <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '10px' }}>그라데이션</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '24px' }}>
-            {BACKGROUNDS.map((bg) => (
-              <button
-                key={bg}
-                onClick={() => onChange(bg)}
-                style={{
-                  width: '100%',
-                  aspectRatio: '1',
-                  borderRadius: '12px',
-                  border: current === bg ? '3px solid #6366f1' : '2px solid transparent',
-                  background: bg,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  transform: current === bg ? 'scale(1.05)' : 'none',
-                  boxShadow: current === bg ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
-                }}
-              />
-            ))}
-          </div>
-
-          {/* 단색 */}
-          <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '10px' }}>단색</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px', marginBottom: '24px' }}>
-            {[
-              '#ffffff', '#f1f5f9', '#e2e8f0', '#1e293b', '#0f172a', '#000000',
-              '#fef2f2', '#fef9c3', '#f0fdf4', '#eff6ff', '#faf5ff', '#fff1f2',
-            ].map((color) => (
-              <button
-                key={color}
-                onClick={() => onChange(color)}
-                style={{
-                  width: '100%',
-                  aspectRatio: '1',
-                  borderRadius: '8px',
-                  border: current === color ? '3px solid #6366f1' : '2px solid #e2e8f0',
-                  backgroundColor: color,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  transform: current === color ? 'scale(1.05)' : 'none',
-                }}
-              />
-            ))}
-          </div>
-
           {/* 사진 배경 카테고리들 */}
           {PHOTO_BACKGROUNDS.map((category) => (
             <div key={category.name}>
@@ -152,6 +106,52 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
               </div>
             </div>
           ))}
+
+          {/* 그라데이션 */}
+          <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '10px' }}>그라데이션</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '24px' }}>
+            {BACKGROUNDS.map((bg) => (
+              <button
+                key={bg}
+                onClick={() => onChange(bg)}
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  borderRadius: '12px',
+                  border: current === bg ? '3px solid #6366f1' : '2px solid transparent',
+                  background: bg,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  transform: current === bg ? 'scale(1.05)' : 'none',
+                  boxShadow: current === bg ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
+                }}
+              />
+            ))}
+          </div>
+
+          {/* 단색 */}
+          <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '10px' }}>단색</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px', marginBottom: '24px' }}>
+            {[
+              '#ffffff', '#f1f5f9', '#e2e8f0', '#1e293b', '#0f172a', '#000000',
+              '#fef2f2', '#fef9c3', '#f0fdf4', '#eff6ff', '#faf5ff', '#fff1f2',
+            ].map((color) => (
+              <button
+                key={color}
+                onClick={() => onChange(color)}
+                style={{
+                  width: '100%',
+                  aspectRatio: '1',
+                  borderRadius: '8px',
+                  border: current === color ? '3px solid #6366f1' : '2px solid #e2e8f0',
+                  backgroundColor: color,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  transform: current === color ? 'scale(1.05)' : 'none',
+                }}
+              />
+            ))}
+          </div>
 
           {/* 직접 선택 */}
           <p style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '10px' }}>직접 선택</p>
