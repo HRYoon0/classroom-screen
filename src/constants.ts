@@ -45,12 +45,12 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
   {
     name: '봄',
     photos: [
-      U('photo-1553530979-7ee52a2670c4'),
-      U('photo-1459411552884-841db9b3cc2a'),
+      U('photo-1557409518-691ebcd96038'),
+      U('photo-1617836250803-24873f080562'),
       U('photo-1522748906645-95d8adfd52c7'),
-      U('photo-1490730141103-6cac27aaab94'),
+      U('photo-1590520069262-5cca4e35ae15'),
       U('photo-1560717789-0ac7c58ac90a'),
-      U('photo-1487530811176-3780de880c2d'),
+      U('photo-1663373342794-e8c8cd78fc12'),
     ],
   },
   {
@@ -58,7 +58,7 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
     photos: [
       U('photo-1507525428034-b723cf961d3e'),
       U('photo-1473116763249-2faaef81ccda'),
-      U('photo-1504701954957-2010ec3bcec1'),
+      U('photo-1595975090424-ad893209abd3'),
       U('photo-1501426026826-31c667bdf23d'),
       U('photo-1414609245224-afa02bfb3fda'),
       U('photo-1468581264429-2548ef9eb732'),
@@ -67,23 +67,23 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
   {
     name: '가을',
     photos: [
-      U('photo-1507003211169-0a1dd7228f2d'),
-      U('photo-1509316975850-ff9c5deb0cd9'),
-      U('photo-1477322524744-0eece9e79640'),
-      U('photo-1473496169904-658ba7c44d8a'),
+      U('photo-1445285303476-2f3b16d67b7a'),
+      U('photo-1741030705526-946e97d1a3b1'),
+      U('photo-1664493115827-573d5669f032'),
+      U('photo-1723980385274-f26931d14c09'),
       U('photo-1508193638397-1c4234db14d8'),
-      U('photo-1521295121783-8a321d551ad2'),
+      U('photo-1422050478545-9f9383263965'),
     ],
   },
   {
     name: '겨울',
     photos: [
-      U('photo-1476231682828-37e571bc172f'),
+      U('photo-1743657166981-8d8e11d03c3e'),
       U('photo-1491002052546-bf38f186af56'),
       U('photo-1478265409131-1f65c88f965c'),
-      U('photo-1516912481808-3406841bd33c'),
+      U('photo-1606388701602-2e3727da5b28'),
       U('photo-1418985991508-e47386d96a71'),
-      U('photo-1495107334309-fcf20504a5ab'),
+      U('photo-1641755842771-165180b90ba2'),
     ],
   },
   {
