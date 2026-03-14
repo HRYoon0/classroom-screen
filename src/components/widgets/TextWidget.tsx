@@ -42,6 +42,52 @@ const COLOR_PRESETS = [
   '#db2777', '#ffffff',
 ];
 
+// 간단한 HTML sanitizer - 허용된 태그와 속성만 통과
+// contentEditable에서 생성되는 서식 태그만 허용 (사용자 본인만 편집하므로 XSS 위험 낮음)
+function sanitizeHtml(html: string): string {
+  const div = document.createElement('div');
+  div.textContent = ''; // 초기화
+  // DOMParser로 안전하게 파싱
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  // 허용 태그
+  const ALLOWED_TAGS = new Set(['SPAN', 'FONT', 'B', 'I', 'U', 'BR', 'DIV', 'P', '#text']);
+  const ALLOWED_ATTRS = new Set(['style', 'color']);
+
+  function cleanNode(node: Node): Node | null {
+    if (node.nodeType === Node.TEXT_NODE) return node.cloneNode();
+    if (node.nodeType !== Node.ELEMENT_NODE) return null;
+    const el = node as Element;
+    if (!ALLOWED_TAGS.has(el.tagName)) {
+      // 태그는 제거하되 자식은 유지
+      const frag = document.createDocumentFragment();
+      el.childNodes.forEach((child) => {
+        const cleaned = cleanNode(child);
+        if (cleaned) frag.appendChild(cleaned);
+      });
+      return frag;
+    }
+    const clone = document.createElement(el.tagName);
+    // 허용된 속성만 복사
+    for (const attr of Array.from(el.attributes)) {
+      if (ALLOWED_ATTRS.has(attr.name)) {
+        clone.setAttribute(attr.name, attr.value);
+      }
+    }
+    el.childNodes.forEach((child) => {
+      const cleaned = cleanNode(child);
+      if (cleaned) clone.appendChild(cleaned);
+    });
+    return clone;
+  }
+
+  doc.body.childNodes.forEach((child) => {
+    const cleaned = cleanNode(child);
+    if (cleaned) div.appendChild(cleaned);
+  });
+  return div.innerHTML;
+}
+
 function TextWidget({ config, onConfigChange }: Props) {
   const fontSize = (config.fontSize as number) || 24;
   const fontFamily = (config.fontFamily as string) || 'sans-serif';
@@ -52,12 +98,19 @@ function TextWidget({ config, onConfigChange }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
 
-  // 마운트 시 텍스트 + 스타일 설정, 서식 변경 시 ref로 직접 DOM 업데이트
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
     if (!initializedRef.current) {
-      el.innerText = (config.text as string) || '';
+      // sanitize 후 DOM으로 삽입 (XSS 방지)
+      const raw = (config.text as string) || '';
+      const cleaned = sanitizeHtml(raw);
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = cleaned;
+      el.textContent = '';
+      while (tempDiv.firstChild) {
+        el.appendChild(tempDiv.firstChild);
+      }
       initializedRef.current = true;
     }
     el.style.fontSize = `${fontSize}px`;
@@ -70,27 +123,51 @@ function TextWidget({ config, onConfigChange }: Props) {
     el.style.caretColor = color;
   }, [fontSize, fontFamily, bold, italic, align, color]);
 
-  // blur 시 텍스트 저장
-  const handleBlur = useCallback(() => {
+  // 콘텐츠 저장 (sanitize 후 저장)
+  const saveContent = useCallback(() => {
     if (editorRef.current) {
-      onConfigChange({ text: editorRef.current.innerText });
+      const sanitized = sanitizeHtml(editorRef.current.innerHTML);
+      onConfigChange({ text: sanitized });
     }
   }, [onConfigChange]);
 
-  // 서식 변경
   const update = useCallback((patch: Record<string, unknown>) => {
     onConfigChange(patch);
   }, [onConfigChange]);
 
+  // 선택된 텍스트에 색상 적용
+  const applyColorToSelection = useCallback((c: string) => {
+    document.execCommand('foreColor', false, c);
+    saveContent();
+  }, [saveContent]);
+
+  // 색상 버튼 클릭 핸들러
+  const handleColorClick = useCallback((c: string) => {
+    const el = editorRef.current;
+    if (!el) return;
+
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      if (el.contains(range.commonAncestorContainer)) {
+        applyColorToSelection(c);
+        return;
+      }
+    }
+
+    // 선택 없으면 전체 색상 변경
+    update({ color: c });
+  }, [applyColorToSelection, update]);
+
   return (
     <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
-      {/* contentEditable 편집 영역 - 폰트 스타일은 ref로만 적용 */}
       <div
         ref={editorRef}
         contentEditable
         suppressContentEditableWarning
         spellCheck={false}
-        onBlur={handleBlur}
+        onBlur={saveContent}
+        onInput={saveContent}
         data-placeholder="텍스트를 입력하세요..."
         style={{
           position: 'absolute',
@@ -173,7 +250,7 @@ function TextWidget({ config, onConfigChange }: Props) {
           {COLOR_PRESETS.map((c) => (
             <button
               key={c}
-              onClick={() => update({ color: c })}
+              onClick={() => handleColorClick(c)}
               className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${
                 color === c ? 'border-indigo-400 scale-110' : 'border-slate-200'
               }`}
