@@ -37,17 +37,45 @@ export default function RandomNameWidget({ config, onConfigChange }: Props) {
 
   if (showInput || names.length === 0) {
     return (
-      <div className="flex flex-col h-full gap-2">
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '12px' }}>
         <textarea
-          className="flex-1 w-full p-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-300 text-slate-700"
-          placeholder="학생 이름을 한 줄에 하나씩 입력하세요&#10;예:&#10;김철수&#10;이영희&#10;박민수"
+          style={{
+            flex: 1,
+            width: '100%',
+            padding: '14px',
+            border: '2px solid #e2e8f0',
+            borderRadius: '10px',
+            fontSize: '18px',
+            lineHeight: 1.6,
+            resize: 'none',
+            outline: 'none',
+            color: '#334155',
+            background: '#f8fafc',
+            boxSizing: 'border-box',
+          }}
+          placeholder={'학생 이름을 한 줄에 하나씩 입력하세요\n예:\n김철수\n이영희\n박민수'}
           value={nameList}
           onChange={(e) => onConfigChange({ names: e.target.value })}
+          onKeyDown={(e) => {
+            // 엔터키로 다음 줄 입력 허용
+            if (e.key === 'Enter') {
+              e.stopPropagation();
+            }
+          }}
         />
         <button
           onClick={() => names.length > 0 && setShowInput(false)}
-          className="px-3 py-1.5 bg-indigo-500 text-white rounded text-sm font-semibold hover:bg-indigo-600 disabled:opacity-50"
           disabled={names.length === 0}
+          style={{
+            padding: '14px',
+            borderRadius: '10px',
+            border: 'none',
+            background: names.length === 0 ? '#cbd5e1' : '#6366f1',
+            color: 'white',
+            fontSize: '18px',
+            fontWeight: 600,
+            cursor: names.length === 0 ? 'default' : 'pointer',
+          }}
         >
           완료 ({names.length}명)
         </button>
@@ -56,29 +84,49 @@ export default function RandomNameWidget({ config, onConfigChange }: Props) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '16px' }}>
       {/* 선택된 이름 표시 */}
-      <div
-        className={`text-4xl font-bold transition-all ${
-          isSpinning ? 'text-indigo-400 scale-95' : 'text-slate-800 scale-100'
-        }`}
-      >
+      <div style={{
+        fontSize: '64px',
+        fontWeight: 700,
+        color: isSpinning ? '#818cf8' : '#1e293b',
+        transition: 'all 0.2s',
+        transform: isSpinning ? 'scale(0.95)' : 'scale(1)',
+      }}>
         {selectedName || '?'}
       </div>
 
-      <p className="text-xs text-slate-400">{names.length}명 중 선택</p>
+      <p style={{ fontSize: '16px', color: '#94a3b8' }}>{names.length}명 중 선택</p>
 
-      <div className="flex gap-2">
+      <div style={{ display: 'flex', gap: '12px' }}>
         <button
           onClick={spin}
           disabled={isSpinning}
-          className="min-w-[80px] h-8 px-5 bg-indigo-500 text-white rounded text-[13px] font-semibold hover:bg-indigo-600 disabled:opacity-60 transition-all"
+          style={{
+            padding: '12px 28px',
+            borderRadius: '10px',
+            border: 'none',
+            background: isSpinning ? '#a5b4fc' : '#6366f1',
+            color: 'white',
+            fontSize: '20px',
+            fontWeight: 600,
+            cursor: isSpinning ? 'default' : 'pointer',
+          }}
         >
           {isSpinning ? '뽑는 중...' : '🎯 뽑기!'}
         </button>
         <button
           onClick={() => setShowInput(true)}
-          className="min-w-[56px] h-8 px-4 bg-slate-100 text-slate-600 rounded text-[13px] font-semibold hover:bg-slate-200"
+          style={{
+            padding: '12px 20px',
+            borderRadius: '10px',
+            border: 'none',
+            background: '#f1f5f9',
+            color: '#475569',
+            fontSize: '20px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
         >
           수정
         </button>
