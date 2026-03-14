@@ -85,116 +85,29 @@ export function isSignedIn() {
   return !!accessToken;
 }
 
-// 토큰 유효성 검증
-export async function validateToken(): Promise<boolean> {
-  if (!accessToken) return false;
-  try {
-    const res = await fetch(
-      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${accessToken}`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      // 남은 시간이 5분 미만이면 만료 임박으로 판단
-      return Number(data.expires_in) > 300;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-// 자동 토큰 갱신 (prompt=none 숨겨진 팝업으로 시도)
-export function silentRefresh(): Promise<string | null> {
-  return new Promise((resolve) => {
-    const redirectUri = window.location.origin;
-    const params = new URLSearchParams({
-      client_id: CLIENT_ID,
-      redirect_uri: redirectUri,
-      response_type: 'token',
-      scope: SCOPES,
-      include_granted_scopes: 'true',
-      prompt: 'none',
-    });
-
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-    // 화면 밖 작은 팝업으로 갱신 (iframe은 cross-origin 차단됨)
-    const popup = window.open(url, 'silent-refresh', 'width=1,height=1,left=-100,top=-100');
-
-    if (!popup) {
-      resolve(null);
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      clearInterval(timer);
-      try { popup.close(); } catch { /* 무시 */ }
-      resolve(null);
-    }, 10000);
-
-    const timer = setInterval(() => {
-      try {
-        if (popup.closed) {
-          clearInterval(timer);
-          clearTimeout(timeout);
-          resolve(null);
-          return;
-        }
-        const popupUrl = popup.location.href;
-        if (popupUrl.startsWith(redirectUri)) {
-          clearInterval(timer);
-          clearTimeout(timeout);
-          if (popupUrl.includes('#')) {
-            const hash = new URL(popupUrl).hash;
-            const token = new URLSearchParams(hash.substring(1)).get('access_token');
-            if (token) {
-              accessToken = token;
-              localStorage.setItem(TOKEN_KEY, token);
-              popup.close();
-              resolve(token);
-              return;
-            }
-          }
-          popup.close();
-          resolve(null);
-        }
-      } catch {
-        // cross-origin 에러 무시 (아직 Google 페이지)
-      }
-    }, 200);
-  });
-}
-
-// 앱 시작 시 토큰 확인 + 필요하면 갱신
+// 앱 시작 시 토큰 확인
 export async function restoreSession(): Promise<boolean> {
   if (!accessToken) return false;
 
-  // 토큰 유효성 확인 (만료 여부와 무관하게 일단 시도)
   try {
-    const res = await fetch(
-      `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${accessToken}`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      const expiresIn = Number(data.expires_in);
-      // 10분 이상 남아있으면 바로 사용
-      if (expiresIn > 600) return true;
-      // 10분 미만이면 백그라운드 갱신 시도하되, 현재 토큰은 유효하므로 true 반환
-      if (expiresIn > 0) {
-        silentRefresh().then((newToken) => {
-          if (!newToken) { /* 갱신 실패해도 현재 토큰 만료까지 사용 */ }
-        });
-        return true;
-      }
+    // getUserInfo로 토큰 유효성 간접 확인
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (res.ok) return true;
+
+    // 401 = 토큰 만료 → 로그아웃
+    if (res.status === 401) {
+      signOut();
+      return false;
     }
-  } catch { /* 네트워크 오류 - 오프라인일 수 있으므로 일단 유지 */ return true; }
 
-  // 토큰 만료됨 → 자동 갱신 시도
-  const newToken = await silentRefresh();
-  if (newToken) return true;
-
-  // 갱신 실패 → 로그아웃 처리
-  signOut();
-  return false;
+    // 기타 에러 (네트워크 등) → 일단 유지
+    return true;
+  } catch {
+    // 네트워크 오류 — 오프라인일 수 있으므로 토큰 유지
+    return true;
+  }
 }
 
 // appDataFolder에서 파일 ID 찾기
