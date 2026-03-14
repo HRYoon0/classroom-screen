@@ -22,15 +22,24 @@ const FIXED_HOLIDAYS: { month: number; day: number; name: string }[] = [
   { month: 11, day: 25, name: '크리스마스' },
 ];
 
-// 대체공휴일 제외 대상 (현충일은 대체공휴일 미적용)
-const NO_SUBSTITUTE = new Set(['현충일']);
-
-// 선거일 (수동 — 4년 주기이지만 날짜가 정해져야 하므로)
-const ELECTIONS: Record<number, { month: number; day: number; name: string }[]> = {
-  2024: [{ month: 3, day: 10, name: '국회의원 선거' }],
-  2026: [{ month: 5, day: 3, name: '지방선거' }],
-  2028: [{ month: 3, day: 12, name: '국회의원 선거' }],
-  2030: [{ month: 5, day: 12, name: '지방선거' }],
+// 확정된 대체공휴일 + 선거일 (수동 등록)
+const EXTRA_HOLIDAYS: Record<number, { month: number; day: number; name: string }[]> = {
+  2024: [
+    { month: 1, day: 12, name: '대체공휴일(설날)' },
+    { month: 3, day: 10, name: '국회의원 선거' },
+    { month: 4, day: 6, name: '대체공휴일(어린이날)' },
+  ],
+  2025: [
+    { month: 4, day: 6, name: '대체공휴일(부처님오신날)' },
+    { month: 9, day: 8, name: '대체공휴일(추석)' },
+  ],
+  2026: [
+    { month: 2, day: 2, name: '대체공휴일(삼일절)' },
+    { month: 4, day: 25, name: '대체공휴일(부처님오신날)' },
+    { month: 5, day: 3, name: '지방선거' },
+    { month: 7, day: 17, name: '대체공휴일(광복절)' },
+    { month: 9, day: 5, name: '대체공휴일(개천절)' },
+  ],
 };
 
 // 해당 연도의 공휴일 맵 생성 (캐시)
@@ -78,41 +87,11 @@ export function getHolidaysForYear(year: number): Record<string, string> {
     addHoliday(next.getMonth(), next.getDate(), '추석 연휴');
   }
 
-  // 3. 선거일
-  const elections = ELECTIONS[year];
-  if (elections) {
-    for (const e of elections) {
+  // 3. 확정된 대체공휴일 + 선거일
+  const extras = EXTRA_HOLIDAYS[year];
+  if (extras) {
+    for (const e of extras) {
       addHoliday(e.month, e.day, e.name);
-    }
-  }
-
-  // 4. 대체공휴일 계산
-  // 공휴일이 토/일과 겹치면 다음 평일을 대체공휴일로
-  const allHolidayDates = Object.keys(holidays).map((key) => {
-    const [m, d] = key.split('-').map(Number);
-    return { month: m, day: d, name: holidays[key] };
-  });
-
-  for (const h of allHolidayDates) {
-    if (NO_SUBSTITUTE.has(h.name)) continue;
-    // 선거일, 연휴 중간은 대체공휴일 미적용
-    if (h.name.includes('선거')) continue;
-
-    const date = new Date(year, h.month, h.day);
-    const dow = date.getDay();
-
-    if (dow === 0 || dow === 6) {
-      // 다음 월요일 찾기 (이미 공휴일인 날은 건너뛰기)
-      const sub = new Date(date);
-      if (dow === 0) sub.setDate(sub.getDate() + 1); // 일→월
-      else sub.setDate(sub.getDate() + 2); // 토→월
-
-      // 이미 공휴일이면 다음 날로
-      while (holidays[`${sub.getMonth()}-${sub.getDate()}`]) {
-        sub.setDate(sub.getDate() + 1);
-      }
-
-      addHoliday(sub.getMonth(), sub.getDate(), `대체공휴일(${h.name.replace(' 연휴', '')})`);
     }
   }
 
