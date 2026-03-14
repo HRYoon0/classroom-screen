@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { IoClose, IoSettings } from 'react-icons/io5';
+import { IoClose, IoSettings, IoEyeOff } from 'react-icons/io5';
 import type { WidgetData } from '../types/widget';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
   onUpdate: (id: string, data: Partial<WidgetData>) => void;
   onRemove: (id: string) => void;
   onBringToFront: (id: string) => void;
+  onConfigChange?: (id: string, config: Record<string, unknown>) => void;
   children: ReactNode;
   title?: string;
   settingsPanel?: ReactNode;
@@ -25,6 +26,7 @@ export default function WidgetWrapper({
   onUpdate,
   onRemove,
   onBringToFront,
+  onConfigChange,
   children,
   title: _title,
   settingsPanel,
@@ -177,7 +179,7 @@ export default function WidgetWrapper({
 
       {/* 위젯 본체 */}
       <div
-        className="widget-card flex flex-col h-full w-full overflow-hidden cursor-grab active:cursor-grabbing [&_[contenteditable]]:cursor-text"
+        className={`${widget.config?.transparent ? '' : 'widget-card'} flex flex-col h-full w-full overflow-hidden cursor-grab active:cursor-grabbing [&_[contenteditable]]:cursor-text`}
         onMouseDown={handleDragStart}
       >
         <div className="flex-1 overflow-hidden min-h-0" style={{ padding: 24 }}>{children}</div>
@@ -206,6 +208,19 @@ export default function WidgetWrapper({
               title="설정"
             >
               <IoSettings size={28} />
+            </button>
+          )}
+          {onConfigChange && (
+            <button
+              onClick={() => {
+                const isTransparent = !widget.config?.transparent;
+                onConfigChange(widget.id, { ...widget.config, transparent: isTransparent });
+              }}
+              className="rounded-lg hover:bg-indigo-50 text-slate-400 hover:text-indigo-500 transition-colors"
+              style={{ padding: '8px', color: widget.config?.transparent ? '#6366f1' : undefined }}
+              title="배경 투명"
+            >
+              <IoEyeOff size={28} />
             </button>
           )}
         </div>

@@ -108,6 +108,7 @@ export default function WidgetRenderer({
       settingsPanel={getSettingsPanel()}
       isSelected={isSelected}
       onSelect={onSelect}
+      onConfigChange={onConfigChange}
     >
       {renderWidgetContent(widget, configHandler, isSelected)}
     </WidgetWrapper>
