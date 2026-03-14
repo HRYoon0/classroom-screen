@@ -6,7 +6,7 @@ interface Props {
 }
 
 export default function RandomNameWidget({ config, onConfigChange }: Props) {
-  const nameList = ((config.names as string) || '').trim();
+  const nameList = (config.names as string) || '';
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const [showInput, setShowInput] = useState(!nameList);
