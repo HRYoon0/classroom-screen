@@ -187,7 +187,7 @@ export default function WidgetWrapper({
       {isSelected && (
         <div
           className="absolute left-1/2 flex items-center bg-white/95 backdrop-blur-sm shadow-lg border border-slate-200/60"
-          style={{ transform: 'translateX(-50%)', top: '-60px', gap: '4px', borderRadius: '12px', padding: '6px 8px' }}
+          style={{ transform: 'translateX(-50%)', top: '-80px', gap: '4px', borderRadius: '12px', padding: '6px 8px' }}
           onMouseDown={(e) => e.stopPropagation()}
         >
           <button
