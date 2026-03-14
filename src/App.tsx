@@ -191,9 +191,11 @@ function App() {
     }
   };
 
-  const bgStyle = background.startsWith('linear-gradient')
-    ? { background }
-    : { backgroundColor: background };
+  const bgStyle: React.CSSProperties = background.startsWith('url(')
+    ? { backgroundImage: background, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : background.startsWith('linear-gradient')
+      ? { background }
+      : { backgroundColor: background };
 
   return (
     <div className="w-full h-full relative overflow-hidden" style={bgStyle}>

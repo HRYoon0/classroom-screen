@@ -32,3 +32,80 @@ export const BACKGROUNDS = [
   'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)',
   'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
 ];
+
+// Unsplash 이미지 URL 헬퍼
+const U = (id: string) => `https://images.unsplash.com/${id}`;
+
+export interface PhotoCategory {
+  name: string;
+  photos: string[];
+}
+
+export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
+  {
+    name: '봄',
+    photos: [
+      U('photo-1462275646964-a0e3c11f18a6'),
+      U('photo-1490750967868-88aa4f44baee'),
+      U('photo-1522748906645-95d8adfd52c7'),
+      U('photo-1588530343078-4466e9680e0b'),
+      U('photo-1560717789-0ac7c58ac90a'),
+      U('photo-1487530811176-3780de880c2d'),
+    ],
+  },
+  {
+    name: '자연',
+    photos: [
+      U('photo-1506744038136-46273834b3fb'),
+      U('photo-1470071459604-3b5ec3a7fe05'),
+      U('photo-1441974231531-c6227db76b6e'),
+      U('photo-1472214103451-9374bd1c798e'),
+      U('photo-1469474968028-56623f02e42e'),
+      U('photo-1433086966358-54859d0ed716'),
+    ],
+  },
+  {
+    name: '동물',
+    photos: [
+      U('photo-1474511320723-9a56873571b7'),
+      U('photo-1437622368342-7a3d73a34c8f'),
+      U('photo-1484406566174-9da000fda645'),
+      U('photo-1425082661507-d6d2ccde3e3c'),
+      U('photo-1517849845537-4d257902454a'),
+      U('photo-1474314881477-04c4aac40a0e'),
+    ],
+  },
+  {
+    name: '도시',
+    photos: [
+      U('photo-1480714378408-67cf0d13bc1b'),
+      U('photo-1449824913935-59a10b8d2000'),
+      U('photo-1477959858617-67f85cf4f1df'),
+      U('photo-1514565131-fce0801e5785'),
+      U('photo-1444723121867-7a241cacace9'),
+      U('photo-1519501025264-65ba15a82390'),
+    ],
+  },
+  {
+    name: '우주',
+    photos: [
+      U('photo-1462331940025-496dfbfc7564'),
+      U('photo-1446776811953-b23d57bd21aa'),
+      U('photo-1451187580459-43490279c0fa'),
+      U('photo-1419242902214-272b3f66ee7a'),
+      U('photo-1507400492013-162706c8c05e'),
+      U('photo-1464802686167-b939a6910659'),
+    ],
+  },
+  {
+    name: '패턴',
+    photos: [
+      U('photo-1558591710-4b4a1ae0f04d'),
+      U('photo-1550859492-d5da9d8e45f3'),
+      U('photo-1557682250-33bd709cbe85'),
+      U('photo-1579546929518-9e396f3cc809'),
+      U('photo-1557682224-5b8590cd9ec5'),
+      U('photo-1557683316-973673baf926'),
+    ],
+  },
+];
