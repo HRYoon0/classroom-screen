@@ -23,7 +23,7 @@ function DiceFace({ value, size = 160, style }: { value: number; size?: number; 
   );
 }
 
-type Phase = 'idle' | 'shake' | 'throw' | 'spin' | 'fall' | 'bounce1' | 'fall2' | 'bounce2' | 'fall3' | 'bounce3' | 'settle' | 'done';
+type Phase = 'idle' | 'throw' | 'spin' | 'fall' | 'bounce1' | 'fall2' | 'bounce2' | 'fall3' | 'bounce3' | 'settle' | 'done';
 
 export default function DiceWidget() {
   const [diceCount, setDiceCount] = useState(1);
@@ -47,14 +47,11 @@ export default function DiceWidget() {
 
     const t = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms));
 
-    // 1: 흔들기 (준비)
-    setPhase('shake');
+    // 1: 위로 던지기
+    setPhase('throw');
 
-    // 2: 위로 던지기 (충분히 오래 보이도록)
-    t(400, () => setPhase('throw'));
-
-    // 3: 공중 최고점에서 회전
-    t(900, () => setPhase('spin'));
+    // 2: 공중 최고점에서 회전
+    t(500, () => setPhase('spin'));
 
     // 4: 낙하
     t(1300, () => setPhase('fall'));
@@ -110,11 +107,6 @@ export default function DiceWidget() {
     const dir = index % 2 === 0 ? 1 : -1;
 
     switch (phase) {
-      case 'shake':
-        return {
-          animation: 'dice-shake 0.08s ease-in-out infinite alternate',
-          transition: 'none',
-        };
       case 'throw':
         return {
           transform: `translateY(-280px) rotate(${r * 5 * dir}deg) scale(0.6)`,
@@ -276,13 +268,6 @@ export default function DiceWidget() {
       </div>
 
       <style>{`
-        @keyframes dice-shake {
-          0% { transform: translateX(-3px) translateY(-2px) rotate(-3deg); }
-          25% { transform: translateX(3px) translateY(1px) rotate(2deg); }
-          50% { transform: translateX(-2px) translateY(-3px) rotate(-2deg); }
-          75% { transform: translateX(2px) translateY(2px) rotate(3deg); }
-          100% { transform: translateX(-1px) translateY(-1px) rotate(-1deg); }
-        }
         @keyframes impact-wave {
           0% { width: 20px; height: 20px; opacity: 0.8; border-width: 4px; }
           100% { width: 300px; height: 300px; opacity: 0; border-width: 1px; }
