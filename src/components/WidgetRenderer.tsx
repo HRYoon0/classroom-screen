@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react';
 import type { WidgetData } from '../types/widget';
 import { WIDGET_META } from '../constants';
 import WidgetWrapper from './WidgetWrapper';
 import TimerWidget from './widgets/TimerWidget';
+import TimerSettings from './widgets/TimerSettings';
 import ClockWidget from './widgets/ClockWidget';
 import StopwatchWidget from './widgets/StopwatchWidget';
 import TrafficLightWidget from './widgets/TrafficLightWidget';
@@ -73,6 +75,17 @@ export default function WidgetRenderer({
   onConfigChange,
 }: Props) {
   const meta = WIDGET_META[widget.type];
+  const configHandler = (config: Record<string, unknown>) => onConfigChange(widget.id, config);
+
+  // 위젯별 설정 패널
+  function getSettingsPanel(): ReactNode | undefined {
+    switch (widget.type) {
+      case 'timer':
+        return <TimerSettings config={widget.config} onConfigChange={configHandler} />;
+      default:
+        return undefined;
+    }
+  }
 
   return (
     <WidgetWrapper
@@ -84,8 +97,9 @@ export default function WidgetRenderer({
       onRemove={onRemove}
       onBringToFront={onBringToFront}
       title={`${meta.icon} ${meta.label}`}
+      settingsPanel={getSettingsPanel()}
     >
-      {renderWidgetContent(widget, (config) => onConfigChange(widget.id, config))}
+      {renderWidgetContent(widget, configHandler)}
     </WidgetWrapper>
   );
 }

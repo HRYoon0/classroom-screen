@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, type ReactNode } from 'react';
-import { IoClose } from 'react-icons/io5';
+import { IoClose, IoSettings } from 'react-icons/io5';
 import type { WidgetData } from '../types/widget';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
   onBringToFront: (id: string) => void;
   children: ReactNode;
   title?: string;
+  settingsPanel?: ReactNode;
 }
 
 export default function WidgetWrapper({
@@ -24,11 +25,13 @@ export default function WidgetWrapper({
   onBringToFront,
   children,
   title: _title,
+  settingsPanel,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // 드래그
   const handleDragStart = useCallback(
@@ -189,7 +192,7 @@ export default function WidgetWrapper({
           <div className="flex-1 overflow-hidden min-h-0" style={{ padding: 24 }}>{children}</div>
         </div>
 
-        {/* 플로팅 삭제 버튼 */}
+        {/* 플로팅 툴바 (삭제 + 설정) */}
         {(isHovered || isSelected) && (
           <div
             className="absolute -top-9 left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/60 px-1 py-0.5"
@@ -202,6 +205,39 @@ export default function WidgetWrapper({
             >
               <IoClose size={16} />
             </button>
+            {settingsPanel && (
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className="p-1.5 rounded hover:bg-indigo-50 text-slate-400 hover:text-indigo-500 transition-colors"
+                style={{ color: showSettings ? '#6366f1' : undefined }}
+                title="설정"
+              >
+                <IoSettings size={16} />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* 설정 패널 */}
+        {showSettings && settingsPanel && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '-12px',
+              left: '50%',
+              transform: 'translateX(-50%) translateY(-100%)',
+              background: 'white',
+              borderRadius: '12px',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+              border: '1px solid #e2e8f0',
+              padding: '12px',
+              zIndex: 100,
+              minWidth: '220px',
+              maxWidth: '320px',
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {settingsPanel}
           </div>
         )}
       </div>
