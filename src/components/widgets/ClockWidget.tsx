@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-type ClockStyle = 'classic' | 'minimal' | 'digital' | 'neon';
+type ClockStyle = 'classic' | 'minimal' | 'digital' | 'neon' | 'cat' | 'flower';
 
 interface Props {
   config: Record<string, unknown>;
@@ -32,6 +32,8 @@ export default function ClockWidget({ config }: Props) {
 
   if (clockStyle === 'digital') return <DigitalClock time={digitalTimeSec} ampm={ampm} />;
   if (clockStyle === 'neon') return <NeonClock time={digitalTime} seconds={seconds} ampm={ampm} />;
+  if (clockStyle === 'cat') return <CatClock hourAngle={hourAngle} minuteAngle={minuteAngle} secondAngle={secondAngle} digitalTime={digitalTime} ampm={ampm} />;
+  if (clockStyle === 'flower') return <FlowerClock hourAngle={hourAngle} minuteAngle={minuteAngle} secondAngle={secondAngle} digitalTime={digitalTime} ampm={ampm} />;
 
   // classic / minimal 공통 아날로그 시계
   const size = 180;
@@ -147,6 +149,178 @@ function DigitalClock({ time, ampm }: { time: string; ampm: string }) {
       {ampm && (
         <div style={{ fontSize: '20px', fontWeight: 600, color: '#6366f1' }}>{ampm}</div>
       )}
+    </div>
+  );
+}
+
+// 고양이 시계 스타일
+interface AnalogProps {
+  hourAngle: number;
+  minuteAngle: number;
+  secondAngle: number;
+  digitalTime: string;
+  ampm: string;
+}
+
+function CatClock({ hourAngle, minuteAngle, secondAngle, digitalTime, ampm }: AnalogProps) {
+  const size = 200;
+  const c = size / 2;
+  const r = 72;
+  // 꼬리 흔들기 (초침 각도 기반)
+  const tailSwing = Math.sin(secondAngle * Math.PI / 180) * 15;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '2px' }}>
+      <svg width={size} height={size + 10} viewBox={`0 0 ${size} ${size + 10}`}>
+        {/* 귀 */}
+        <path d={`M${c - 55},${c - 58} L${c - 38},${c - 85} L${c - 20},${c - 62}`}
+          fill="#fbbf24" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" />
+        <path d={`M${c + 55},${c - 58} L${c + 38},${c - 85} L${c + 20},${c - 62}`}
+          fill="#fbbf24" stroke="#f59e0b" strokeWidth="2" strokeLinejoin="round" />
+        {/* 안쪽 귀 */}
+        <path d={`M${c - 50},${c - 60} L${c - 38},${c - 78} L${c - 26},${c - 63}`}
+          fill="#fca5a5" />
+        <path d={`M${c + 50},${c - 60} L${c + 38},${c - 78} L${c + 26},${c - 63}`}
+          fill="#fca5a5" />
+
+        {/* 얼굴 원 */}
+        <circle cx={c} cy={c} r={r} fill="#fef3c7" stroke="#f59e0b" strokeWidth="2.5" />
+
+        {/* 눈 */}
+        <ellipse cx={c - 22} cy={c - 12} rx="7" ry="9" fill="#1e293b" />
+        <ellipse cx={c + 22} cy={c - 12} rx="7" ry="9" fill="#1e293b" />
+        <circle cx={c - 19} cy={c - 14} r="2.5" fill="white" />
+        <circle cx={c + 25} cy={c - 14} r="2.5" fill="white" />
+
+        {/* 코 */}
+        <ellipse cx={c} cy={c + 2} rx="5" ry="3.5" fill="#f472b6" />
+
+        {/* 입 */}
+        <path d={`M${c - 8},${c + 6} Q${c},${c + 14} ${c + 8},${c + 6}`} fill="none" stroke="#f59e0b" strokeWidth="1.5" />
+
+        {/* 수염 */}
+        <line x1={c - 30} y1={c - 2} x2={c - 60} y2={c - 8} stroke="#d97706" strokeWidth="1" />
+        <line x1={c - 30} y1={c + 4} x2={c - 58} y2={c + 6} stroke="#d97706" strokeWidth="1" />
+        <line x1={c + 30} y1={c - 2} x2={c + 60} y2={c - 8} stroke="#d97706" strokeWidth="1" />
+        <line x1={c + 30} y1={c + 4} x2={c + 58} y2={c + 6} stroke="#d97706" strokeWidth="1" />
+
+        {/* 숫자 (12, 3, 6, 9만) */}
+        {[
+          { n: '12', x: c, y: c - r + 18 },
+          { n: '3', x: c + r - 18, y: c },
+          { n: '6', x: c, y: c + r - 14 },
+          { n: '9', x: c - r + 16, y: c },
+        ].map(({ n, x, y }) => (
+          <text key={n} x={x} y={y} textAnchor="middle" dominantBaseline="central"
+            fill="#92400e" fontSize="12" fontWeight="700">{n}</text>
+        ))}
+
+        {/* 시침 */}
+        <line x1={c} y1={c} x2={c + 32 * Math.sin(hourAngle * Math.PI / 180)} y2={c - 32 * Math.cos(hourAngle * Math.PI / 180)}
+          stroke="#92400e" strokeWidth="3.5" strokeLinecap="round" />
+        {/* 분침 */}
+        <line x1={c} y1={c} x2={c + 48 * Math.sin(minuteAngle * Math.PI / 180)} y2={c - 48 * Math.cos(minuteAngle * Math.PI / 180)}
+          stroke="#92400e" strokeWidth="2.5" strokeLinecap="round" />
+        {/* 초침 */}
+        <line x1={c} y1={c} x2={c + 52 * Math.sin(secondAngle * Math.PI / 180)} y2={c - 52 * Math.cos(secondAngle * Math.PI / 180)}
+          stroke="#f472b6" strokeWidth="1.2" strokeLinecap="round" />
+        {/* 중심 */}
+        <circle cx={c} cy={c} r="4" fill="#f472b6" />
+        <circle cx={c} cy={c} r="1.5" fill="white" />
+
+        {/* 꼬리 (아래에서 흔들림) */}
+        <path
+          d={`M${c},${c + r + 2} Q${c + tailSwing},${c + r + 22} ${c + tailSwing * 0.5},${c + r + 36}`}
+          fill="none" stroke="#f59e0b" strokeWidth="4" strokeLinecap="round"
+          style={{ transition: 'd 0.5s ease' }}
+        />
+      </svg>
+      <div style={{ fontSize: '16px', fontWeight: 700, color: '#92400e', fontVariantNumeric: 'tabular-nums' }}>
+        {ampm && <span style={{ marginRight: '4px' }}>{ampm}</span>}
+        {digitalTime} 🐱
+      </div>
+    </div>
+  );
+}
+
+// 꽃 시계 스타일
+function FlowerClock({ hourAngle, minuteAngle, secondAngle, digitalTime, ampm }: AnalogProps) {
+  const size = 200;
+  const c = size / 2;
+  const r = 70;
+
+  // 꽃잎 색상들
+  const petalColors = ['#f9a8d4', '#c4b5fd', '#93c5fd', '#86efac', '#fde68a', '#fca5a5', '#d8b4fe', '#a5f3fc'];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '2px' }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* 꽃잎 (12개) */}
+        {Array.from({ length: 12 }).map((_, i) => {
+          const angle = (i * 30 - 90) * (Math.PI / 180);
+          const px = c + (r + 6) * Math.cos(angle);
+          const py = c + (r + 6) * Math.sin(angle);
+          return (
+            <ellipse key={i}
+              cx={px} cy={py} rx="16" ry="10"
+              fill={petalColors[i % petalColors.length]}
+              opacity="0.7"
+              transform={`rotate(${i * 30} ${px} ${py})`}
+            />
+          );
+        })}
+
+        {/* 시계 원 */}
+        <circle cx={c} cy={c} r={r - 6} fill="white" />
+        <circle cx={c} cy={c} r={r - 6} fill="none" stroke="#e9d5ff" strokeWidth="2" />
+
+        {/* 숫자 */}
+        {Array.from({ length: 12 }).map((_, i) => {
+          const angle = ((i + 1) * 30 - 90) * (Math.PI / 180);
+          const nr = r - 22;
+          return (
+            <text key={i}
+              x={c + nr * Math.cos(angle)} y={c + nr * Math.sin(angle)}
+              textAnchor="middle" dominantBaseline="central"
+              fill="#7c3aed" fontSize="13" fontWeight="600"
+            >
+              {i + 1}
+            </text>
+          );
+        })}
+
+        {/* 눈금 */}
+        {Array.from({ length: 12 }).map((_, i) => {
+          const angle = (i * 30 - 90) * (Math.PI / 180);
+          const r1 = r - 8;
+          const r2 = r - 13;
+          return (
+            <line key={`t${i}`}
+              x1={c + r1 * Math.cos(angle)} y1={c + r1 * Math.sin(angle)}
+              x2={c + r2 * Math.cos(angle)} y2={c + r2 * Math.sin(angle)}
+              stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round"
+            />
+          );
+        })}
+
+        {/* 시침 */}
+        <line x1={c} y1={c} x2={c + 30 * Math.sin(hourAngle * Math.PI / 180)} y2={c - 30 * Math.cos(hourAngle * Math.PI / 180)}
+          stroke="#7c3aed" strokeWidth="3.5" strokeLinecap="round" />
+        {/* 분침 */}
+        <line x1={c} y1={c} x2={c + 44 * Math.sin(minuteAngle * Math.PI / 180)} y2={c - 44 * Math.cos(minuteAngle * Math.PI / 180)}
+          stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" />
+        {/* 초침 */}
+        <line x1={c} y1={c} x2={c + 48 * Math.sin(secondAngle * Math.PI / 180)} y2={c - 48 * Math.cos(secondAngle * Math.PI / 180)}
+          stroke="#f472b6" strokeWidth="1.2" strokeLinecap="round" />
+
+        {/* 중심 꽃 */}
+        <circle cx={c} cy={c} r="6" fill="#fbbf24" />
+        <circle cx={c} cy={c} r="3" fill="#f59e0b" />
+      </svg>
+      <div style={{ fontSize: '16px', fontWeight: 700, color: '#7c3aed', fontVariantNumeric: 'tabular-nums' }}>
+        {ampm && <span style={{ marginRight: '4px' }}>{ampm}</span>}
+        {digitalTime} 🌸
+      </div>
     </div>
   );
 }
