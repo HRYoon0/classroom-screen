@@ -216,7 +216,7 @@ export default function CalendarWidget({ config, onConfigChange }: Props) {
             onMouseDown={(e) => e.stopPropagation()}
           >
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#1e293b', marginBottom: '10px' }}>
-              {editingDate.split('-').slice(1).map(Number).join('월 ')}일 메모
+              {(() => { const parts = editingDate.split('-').map(Number); return `${parts[1] + 1}월 ${parts[2]}일 메모`; })()}
             </p>
             <input
               ref={inputRef}
