@@ -35,6 +35,7 @@ export const BACKGROUNDS = [
 
 // Unsplash 이미지 URL 헬퍼
 const U = (id: string) => `https://images.unsplash.com/${id}`;
+const P = (id: string) => `https://plus.unsplash.com/${id}`;
 
 export interface PhotoCategory {
   name: string;
@@ -89,12 +90,12 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
   {
     name: '교실',
     photos: [
-      U('photo-1580582932707-520aed937b7b'),
-      U('photo-1612178574161-fd59b99b6894'),
-      U('photo-1564981797816-1043664bf78d'),
-      U('photo-1554523449-209945dde0c7'),
-      U('photo-1509062522246-3755977927d7'),
       U('photo-1577896851231-70ef18881754'),
+      U('photo-1588075592446-265fd1e6e76f'),
+      P('premium_photo-1661391735643-204f6cd45754'),
+      U('photo-1567057420215-0afa9aa9253a'),
+      P('premium_photo-1686920245013-365ae71428a2'),
+      U('photo-1533247774066-59cbfc352299'),
     ],
   },
   {
