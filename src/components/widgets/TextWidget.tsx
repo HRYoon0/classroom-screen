@@ -155,9 +155,20 @@ function TextWidget({ config, onConfigChange }: Props) {
       }
     }
 
-    // 선택 없으면 전체 색상 변경
-    update({ color: c });
-  }, [applyColorToSelection, update]);
+    // 선택 없으면 전체 색상 변경 — 기존 인라인 색상 서식 제거
+    if (el) {
+      el.querySelectorAll('font[color]').forEach((font) => {
+        font.removeAttribute('color');
+      });
+      el.querySelectorAll('[style]').forEach((node) => {
+        const htmlEl = node as HTMLElement;
+        htmlEl.style.removeProperty('color');
+      });
+      onConfigChange({ color: c, text: sanitizeHtml(el.innerHTML) });
+    } else {
+      update({ color: c });
+    }
+  }, [applyColorToSelection, update, onConfigChange]);
 
   return (
     <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
