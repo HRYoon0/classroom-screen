@@ -1,80 +1,9 @@
 import { useState } from 'react';
 import { IoChevronBack, IoChevronForward } from 'react-icons/io5';
+import { getHoliday } from '../../utils/koreanHolidays';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const MONTHS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
-
-// 고정 공휴일 (월-일, 0-indexed month)
-const FIXED_HOLIDAYS: Record<string, string> = {
-  '0-1': '신정',
-  '2-1': '삼일절',
-  '4-5': '어린이날',
-  '5-6': '현충일',
-  '6-17': '제헌절',
-  '7-15': '광복절',
-  '9-3': '개천절',
-  '9-9': '한글날',
-  '11-25': '크리스마스',
-};
-
-// 음력 기반 공휴일 + 대체공휴일 + 선거일 (연도별)
-const YEARLY_HOLIDAYS: Record<number, Record<string, string>> = {
-  2024: {
-    '1-9': '설날 연휴', '1-10': '설날', '1-11': '설날 연휴', '1-12': '대체공휴일(설날)',
-    '3-10': '국회의원 선거',
-    '4-6': '대체공휴일(어린이날)', '4-15': '부처님오신날',
-    '8-16': '추석 연휴', '8-17': '추석', '8-18': '추석 연휴',
-  },
-  2025: {
-    '0-28': '설날 연휴', '0-29': '설날', '0-30': '설날 연휴',
-    '4-5': '부처님오신날', '4-6': '대체공휴일(부처님오신날)',
-    '9-5': '추석 연휴', '9-6': '추석', '9-7': '추석 연휴', '9-8': '대체공휴일(추석)',
-  },
-  2026: {
-    '1-16': '설날 연휴', '1-17': '설날', '1-18': '설날 연휴',
-    '2-2': '대체공휴일(삼일절)',
-    '4-24': '부처님오신날', '4-25': '대체공휴일(부처님오신날)',
-    '5-3': '지방선거',
-    '7-17': '대체공휴일(광복절)',
-    '8-24': '추석 연휴', '8-25': '추석', '8-26': '추석 연휴',
-    '9-5': '대체공휴일(개천절)',
-  },
-  2027: {
-    '1-5': '설날 연휴', '1-6': '설날', '1-7': '설날 연휴', '1-8': '대체공휴일(설날)',
-    '4-13': '부처님오신날',
-    '8-14': '추석 연휴', '8-15': '추석', '8-16': '추석 연휴',
-  },
-  2028: {
-    '0-25': '설날 연휴', '0-26': '설날', '0-27': '설날 연휴',
-    '3-12': '국회의원 선거',
-    '4-2': '부처님오신날',
-    '9-2': '추석 연휴', '9-3': '추석', '9-4': '추석 연휴',
-  },
-  2029: {
-    '1-12': '설날 연휴', '1-13': '설날', '1-14': '설날 연휴',
-    '4-20': '부처님오신날', '4-21': '대체공휴일(부처님오신날)',
-    '8-21': '추석 연휴', '8-22': '추석', '8-23': '추석 연휴',
-  },
-  2030: {
-    '1-2': '설날 연휴', '1-3': '설날', '1-4': '설날 연휴',
-    '4-9': '부처님오신날',
-    '5-12': '지방선거',
-    '8-11': '추석 연휴', '8-12': '추석', '8-13': '추석 연휴',
-  },
-};
-
-function getHoliday(year: number, month: number, day: number): string | null {
-  // 연도별 공휴일 (음력+대체+선거)
-  const yearMap = YEARLY_HOLIDAYS[year];
-  if (yearMap) {
-    const key = `${month}-${day}`;
-    if (yearMap[key]) return yearMap[key];
-  }
-  // 고정 공휴일
-  const fixedKey = `${month}-${day}`;
-  if (FIXED_HOLIDAYS[fixedKey]) return FIXED_HOLIDAYS[fixedKey];
-  return null;
-}
 
 export default function CalendarWidget() {
   const today = new Date();
@@ -192,23 +121,13 @@ export default function CalendarWidget() {
                   width: '4px', height: '4px', borderRadius: '50%', background: '#ef4444',
                 }} />
               )}
-              {/* 공휴일 이름 툴팁 */}
               {isHovered && (
                 <div style={{
-                  position: 'absolute',
-                  bottom: '100%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  marginBottom: '4px',
-                  padding: '4px 8px',
-                  background: '#1e293b',
-                  color: 'white',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  borderRadius: '6px',
-                  whiteSpace: 'nowrap',
-                  zIndex: 50,
-                  pointerEvents: 'none',
+                  position: 'absolute', bottom: '100%', left: '50%',
+                  transform: 'translateX(-50%)', marginBottom: '4px',
+                  padding: '4px 8px', background: '#1e293b', color: 'white',
+                  fontSize: '11px', fontWeight: 500, borderRadius: '6px',
+                  whiteSpace: 'nowrap', zIndex: 50, pointerEvents: 'none',
                 }}>
                   {holiday}
                 </div>
