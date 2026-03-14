@@ -243,92 +243,118 @@ function CatClock({ hourAngle, minuteAngle, secondAngle, digitalTime, ampm }: An
   );
 }
 
-// 꽃 시계 스타일 - 12시 위치마다 작은 꽃
+// 벚꽃 시계 스타일
 function FlowerClock({ hourAngle, minuteAngle, secondAngle, digitalTime, ampm }: AnalogProps) {
-  const size = 210;
+  const size = 200;
   const c = size / 2;
-  const r = 76;
+  const r = 74;
 
-  const flowerColors = [
-    { petal: '#f9a8d4', center: '#fbbf24' },
-    { petal: '#c4b5fd', center: '#fbbf24' },
-    { petal: '#93c5fd', center: '#fde68a' },
-    { petal: '#86efac', center: '#fbbf24' },
-    { petal: '#fca5a5', center: '#fde68a' },
-    { petal: '#a78bfa', center: '#fbbf24' },
-    { petal: '#f9a8d4', center: '#fde68a' },
-    { petal: '#7dd3fc', center: '#fbbf24' },
-    { petal: '#d8b4fe', center: '#fde68a' },
-    { petal: '#fda4af', center: '#fbbf24' },
-    { petal: '#86efac', center: '#fde68a' },
-    { petal: '#f9a8d4', center: '#fbbf24' },
-  ];
-
-  // 작은 꽃 하나 렌더링 (꽃잎 5장 + 중심)
-  function renderFlower(fx: number, fy: number, petalColor: string, centerColor: string, petalSize: number) {
-    const petals = [];
-    for (let p = 0; p < 5; p++) {
-      const pa = (p * 72 - 90) * (Math.PI / 180);
-      const px = fx + petalSize * 0.7 * Math.cos(pa);
-      const py = fy + petalSize * 0.7 * Math.sin(pa);
-      petals.push(
-        <circle key={p} cx={px} cy={py} r={petalSize} fill={petalColor} opacity="0.8" />
-      );
-    }
+  // 벚꽃 한 송이 SVG (꽃잎 5장 + 중심)
+  function sakura(sx: number, sy: number, sz: number, rot: number, opacity: number) {
     return (
-      <g>
-        {petals}
-        <circle cx={fx} cy={fy} r={petalSize * 0.55} fill={centerColor} />
+      <g transform={`translate(${sx},${sy}) rotate(${rot}) scale(${sz})`} opacity={opacity}>
+        {[0, 72, 144, 216, 288].map((a) => (
+          <ellipse key={a} cx={0} cy={-5} rx="3.2" ry="5.5" fill="#fbcfe8"
+            transform={`rotate(${a})`} />
+        ))}
+        <circle cx={0} cy={0} r="2" fill="#f9a8d4" />
       </g>
     );
   }
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '2px' }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* 시계 배경 원 */}
-        <circle cx={c} cy={c} r={r - 10} fill="white" fillOpacity="0.9" />
-        <circle cx={c} cy={c} r={r - 10} fill="none" stroke="#e9d5ff" strokeWidth="1.5" />
+  // 떨어지는 꽃잎 위치들 (고정, 랜덤 느낌)
+  const petals = [
+    { x: 22, y: 30, sz: 0.8, rot: 20 },
+    { x: 170, y: 50, sz: 0.7, rot: -30 },
+    { x: 40, y: 160, sz: 0.9, rot: 45 },
+    { x: 165, y: 155, sz: 0.6, rot: -15 },
+    { x: 15, y: 95, sz: 0.5, rot: 60 },
+    { x: 180, y: 100, sz: 0.55, rot: -50 },
+    { x: 85, y: 12, sz: 0.7, rot: 10 },
+    { x: 120, y: 185, sz: 0.65, rot: -40 },
+  ];
 
-        {/* 12개 꽃 (시계 눈금 위치) */}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '4px', position: 'relative', overflow: 'hidden' }}>
+      {/* 떨어지는 꽃잎 CSS 애니메이션 */}
+      <style>{`
+        @keyframes sakuraFall {
+          0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+          10% { opacity: 0.7; }
+          90% { opacity: 0.5; }
+          100% { transform: translateY(220px) rotate(360deg); opacity: 0; }
+        }
+      `}</style>
+
+      {/* 떨어지는 작은 꽃잎들 */}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div key={i} style={{
+          position: 'absolute',
+          left: `${15 + i * 18}%`,
+          top: '-10px',
+          width: '12px',
+          height: '12px',
+          borderRadius: '50% 0 50% 50%',
+          background: i % 2 === 0 ? '#fbcfe8' : '#f9a8d4',
+          opacity: 0,
+          animation: `sakuraFall ${4 + i * 0.8}s ease-in ${i * 1.5}s infinite`,
+          pointerEvents: 'none',
+        }} />
+      ))}
+
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* 배경 원 - 연분홍 */}
+        <circle cx={c} cy={c} r={r} fill="#fff1f2" />
+        <circle cx={c} cy={c} r={r} fill="none" stroke="#f9a8d4" strokeWidth="2" />
+
+        {/* 장식 벚꽃들 (시계 바깥) */}
+        {petals.map((p, i) => (
+          <g key={i}>{sakura(p.x, p.y, p.sz, p.rot, 0.6)}</g>
+        ))}
+
+        {/* 12시 위치에 벚꽃 (큰 장식) */}
+        {sakura(c, c - r + 4, 1.2, 0, 0.9)}
+        {sakura(c - r + 6, c, 1.0, 30, 0.8)}
+        {sakura(c + r - 6, c, 1.0, -30, 0.8)}
+        {sakura(c, c + r - 4, 1.1, 15, 0.85)}
+
+        {/* 눈금 (점) */}
         {Array.from({ length: 12 }).map((_, i) => {
           const angle = (i * 30 - 90) * (Math.PI / 180);
-          const fx = c + (r + 2) * Math.cos(angle);
-          const fy = c + (r + 2) * Math.sin(angle);
-          const fc = flowerColors[i];
-          return <g key={i}>{renderFlower(fx, fy, fc.petal, fc.center, 7)}</g>;
-        })}
-
-        {/* 숫자 */}
-        {Array.from({ length: 12 }).map((_, i) => {
-          const angle = ((i + 1) * 30 - 90) * (Math.PI / 180);
-          const nr = r - 24;
+          const dr = r - 12;
           return (
-            <text key={i}
-              x={c + nr * Math.cos(angle)} y={c + nr * Math.sin(angle)}
-              textAnchor="middle" dominantBaseline="central"
-              fill="#7c3aed" fontSize="13" fontWeight="700"
-            >
-              {i + 1}
-            </text>
+            <circle key={i} cx={c + dr * Math.cos(angle)} cy={c + dr * Math.sin(angle)}
+              r="2.5" fill="#f472b6" opacity="0.5" />
           );
         })}
 
-        {/* 시침 */}
-        <line x1={c} y1={c} x2={c + 30 * Math.sin(hourAngle * Math.PI / 180)} y2={c - 30 * Math.cos(hourAngle * Math.PI / 180)}
-          stroke="#7c3aed" strokeWidth="3.5" strokeLinecap="round" />
-        {/* 분침 */}
-        <line x1={c} y1={c} x2={c + 46 * Math.sin(minuteAngle * Math.PI / 180)} y2={c - 46 * Math.cos(minuteAngle * Math.PI / 180)}
-          stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" />
-        {/* 초침 */}
-        <line x1={c} y1={c} x2={c + 50 * Math.sin(secondAngle * Math.PI / 180)} y2={c - 50 * Math.cos(secondAngle * Math.PI / 180)}
-          stroke="#f472b6" strokeWidth="1.2" strokeLinecap="round" />
+        {/* 숫자 (12, 3, 6, 9만) */}
+        {[
+          { n: '12', x: c, y: c - r + 24 },
+          { n: '3', x: c + r - 24, y: c },
+          { n: '6', x: c, y: c + r - 20 },
+          { n: '9', x: c - r + 22, y: c },
+        ].map(({ n, x, y }) => (
+          <text key={n} x={x} y={y} textAnchor="middle" dominantBaseline="central"
+            fill="#be185d" fontSize="14" fontWeight="700">{n}</text>
+        ))}
 
-        {/* 중심 꽃 */}
-        {renderFlower(c, c, '#f9a8d4', '#fbbf24', 5)}
+        {/* 시침 - 벚꽃 가지 느낌 */}
+        <line x1={c} y1={c} x2={c + 32 * Math.sin(hourAngle * Math.PI / 180)} y2={c - 32 * Math.cos(hourAngle * Math.PI / 180)}
+          stroke="#9d174d" strokeWidth="3.5" strokeLinecap="round" />
+        {/* 분침 */}
+        <line x1={c} y1={c} x2={c + 48 * Math.sin(minuteAngle * Math.PI / 180)} y2={c - 48 * Math.cos(minuteAngle * Math.PI / 180)}
+          stroke="#9d174d" strokeWidth="2.5" strokeLinecap="round" />
+        {/* 초침 */}
+        <line x1={c} y1={c} x2={c + 54 * Math.sin(secondAngle * Math.PI / 180)} y2={c - 54 * Math.cos(secondAngle * Math.PI / 180)}
+          stroke="#ec4899" strokeWidth="1.2" strokeLinecap="round" />
+
+        {/* 중심 벚꽃 */}
+        {sakura(c, c, 1.0, 0, 1)}
       </svg>
-      <div style={{ fontSize: '16px', fontWeight: 700, color: '#7c3aed', fontVariantNumeric: 'tabular-nums' }}>
-        {ampm && <span style={{ marginRight: '4px' }}>{ampm}</span>}
+
+      <div style={{ fontSize: '16px', fontWeight: 700, color: '#9d174d', fontVariantNumeric: 'tabular-nums' }}>
+        {ampm && <span style={{ marginRight: '4px', color: '#ec4899' }}>{ampm}</span>}
         {digitalTime} 🌸
       </div>
     </div>
