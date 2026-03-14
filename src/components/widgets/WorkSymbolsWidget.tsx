@@ -12,23 +12,21 @@ const SYMBOLS: Symbol[] = [
     id: 'silence',
     label: '조용히',
     icon: (s) => (
-      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        {/* 얼굴 원형 */}
-        <circle cx="34" cy="40" r="18" />
+      <svg width={s} height={s} viewBox="0 0 80 80" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+        {/* 옆모습 얼굴 윤곽: 이마→코→입→턱 */}
+        <path d="M28 12 C22 12, 18 18, 18 26 L18 30 C18 32, 20 34, 20 36 L24 40 L20 42 C18 44, 18 48, 20 50 L24 54 C28 58, 32 58, 34 54 L34 48" />
         {/* 눈 */}
-        <circle cx="28" cy="36" r="1.5" fill="currentColor" />
-        <circle cx="40" cy="36" r="1.5" fill="currentColor" />
-        {/* 입 */}
-        <line x1="31" y1="46" x2="37" y2="46" />
-        {/* 손가락 (입 앞에 세로) */}
-        <line x1="52" y1="22" x2="52" y2="48" strokeWidth="3" />
-        {/* 손 (손가락 아래) */}
-        <path d="M48 48 C48 52, 50 54, 52 54 C54 54, 56 52, 56 48" strokeWidth="2.5" />
-        <path d="M48 48 L48 52" strokeWidth="2" />
-        <path d="M56 48 L56 52" strokeWidth="2" />
-        {/* X 표시 (소리 안 됨) */}
-        <line x1="62" y1="30" x2="70" y2="38" strokeWidth="2" />
-        <line x1="70" y1="30" x2="62" y2="38" strokeWidth="2" />
+        <circle cx="24" cy="24" r="2" fill="currentColor" />
+        {/* 손가락 (입 앞 세로 — 쉿 포즈) */}
+        <line x1="40" y1="18" x2="40" y2="50" strokeWidth="3.5" />
+        {/* 손바닥 */}
+        <path d="M36 50 C36 54, 38 56, 40 56 C42 56, 44 54, 44 50" />
+        {/* 접힌 나머지 손가락 */}
+        <path d="M44 50 C46 50, 47 48, 47 46 C47 44, 46 42, 44 42" />
+        <path d="M36 50 C34 50, 33 48, 33 46 C33 44, 34 42, 36 42" />
+        {/* 소리 파동 + 금지 */}
+        <path d="M52 28 C54 32, 54 38, 52 42" />
+        <line x1="50" y1="26" x2="56" y2="44" strokeWidth="2.5" />
       </svg>
     ),
   },
