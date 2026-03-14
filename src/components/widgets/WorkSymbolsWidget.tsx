@@ -156,13 +156,12 @@ const SYMBOLS: Symbol[] = [
   },
 ];
 
-export default function WorkSymbolsWidget() {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [showPicker, setShowPicker] = useState(false);
+interface WidgetProps {
+  isSelected?: boolean;
+}
 
-  const handleTogglePicker = useCallback(() => {
-    setShowPicker((prev) => !prev);
-  }, []);
+export default function WorkSymbolsWidget({ isSelected = false }: WidgetProps) {
+  const [activeIdx, setActiveIdx] = useState(0);
 
   const handleSelect = useCallback((idx: number) => {
     setActiveIdx(idx);
@@ -182,7 +181,6 @@ export default function WorkSymbolsWidget() {
         cursor: 'pointer',
         userSelect: 'none',
       }}
-      onClick={handleTogglePicker}
     >
       {/* 메인 원형 아이콘 */}
       <div style={{
@@ -197,7 +195,7 @@ export default function WorkSymbolsWidget() {
         boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
         color: '#1e293b',
         transition: 'transform 0.2s, box-shadow 0.2s',
-        transform: showPicker ? 'scale(0.92)' : 'scale(1)',
+        transform: isSelected ? 'scale(0.95)' : 'scale(1)',
       }}>
         {active.icon(80)}
         <span style={{
@@ -211,7 +209,7 @@ export default function WorkSymbolsWidget() {
       </div>
 
       {/* 하단 선택 바 — 클릭(마우스 누르고 있을 때)만 표시 */}
-      {showPicker && (
+      {isSelected && (
         <div style={{
           position: 'absolute',
           bottom: '0',

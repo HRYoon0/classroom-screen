@@ -33,7 +33,8 @@ interface Props {
 
 function renderWidgetContent(
   widget: WidgetData,
-  onConfigChange: (config: Record<string, unknown>) => void
+  onConfigChange: (config: Record<string, unknown>) => void,
+  isSelected: boolean
 ) {
   switch (widget.type) {
     case 'timer':
@@ -61,7 +62,7 @@ function renderWidgetContent(
     case 'dice':
       return <DiceWidget />;
     case 'work-symbols':
-      return <WorkSymbolsWidget />;
+      return <WorkSymbolsWidget isSelected={isSelected} />;
     default:
       return <div className="text-slate-400 text-sm">알 수 없는 위젯</div>;
   }
@@ -108,7 +109,7 @@ export default function WidgetRenderer({
       isSelected={isSelected}
       onSelect={onSelect}
     >
-      {renderWidgetContent(widget, configHandler)}
+      {renderWidgetContent(widget, configHandler, isSelected)}
     </WidgetWrapper>
   );
 }
