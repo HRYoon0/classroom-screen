@@ -23,7 +23,7 @@ export default function QRCodeWidget({ config, onConfigChange }: Props) {
       {url ? (
         <>
           <div style={{ background: 'white', padding: '12px', borderRadius: '12px' }}>
-            <QRCodeSVG value={url} size={140} />
+            <QRCodeSVG value={url} size={200} level="M" includeMargin />
           </div>
           <p style={{ fontSize: '12px', color: '#64748b', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 8px' }}>{url}</p>
           <button
