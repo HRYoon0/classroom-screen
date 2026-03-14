@@ -83,7 +83,7 @@ export default function DiceWidget() {
   };
 
   const total = values.reduce((a, b) => a + b, 0);
-  const diceSize = diceCount > 2 ? 120 : 160;
+  const diceSize = diceCount > 2 ? 90 : 160;
 
   // 각 주사위의 애니메이션 스타일
   const getDiceStyle = (index: number): React.CSSProperties => {
