@@ -300,6 +300,29 @@ function App() {
             <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${
               sessionExpired ? 'bg-amber-400' : 'bg-emerald-400'
             }`} />
+            {/* 세션 만료 텍스트 */}
+            {sessionExpired && (
+              <div
+                onClick={handleReSignIn}
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  background: 'rgba(245,158,11,0.9)',
+                  color: 'white',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                }}
+              >
+                재로그인 필요
+              </div>
+            )}
             {showUserMenu && (
               <div className="absolute right-0 top-12 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl border border-white/60 min-w-[200px] overflow-hidden">
                 <div style={{ padding: '14px 20px 10px' }}>
