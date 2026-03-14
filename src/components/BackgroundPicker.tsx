@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { BACKGROUNDS, PHOTO_BACKGROUNDS } from '../constants';
 import { IoClose, IoSearch } from 'react-icons/io5';
 
-const UNSPLASH_ACCESS_KEY = 'loC0kf5_pwyxDC76zh1sidQpwvJah17evxkrr0iDGM0';
+const UNSPLASH_ACCESS_KEY = 'loC0kf5_pwyxDC76zh1sidQpwvJah17evxkrrOiDGM0';
 
 interface UnsplashPhoto {
   id: string;
