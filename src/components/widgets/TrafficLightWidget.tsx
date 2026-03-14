@@ -64,26 +64,23 @@ export default function TrafficLightWidget() {
                   }}
                 />
               )}
-              {/* 활성화 시 라벨 표시 */}
-              {isActive && (
-                <span style={{
-                  position: 'absolute',
-                  left: '68px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  whiteSpace: 'nowrap',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: activeColor,
-                  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                }}>
-                  {label}
-                </span>
-              )}
             </button>
           );
         })}
       </div>
+      {/* 활성 라벨 - 신호등 아래 */}
+      {activeLight !== 'off' && (
+        <p style={{
+          marginTop: '10px',
+          fontSize: '15px',
+          fontWeight: 700,
+          color: LIGHTS.find((l) => l.color === activeLight)?.activeColor,
+          textAlign: 'center',
+          textShadow: '0 1px 2px rgba(0,0,0,0.1)',
+        }}>
+          {LIGHTS.find((l) => l.color === activeLight)?.label}
+        </p>
+      )}
     </div>
   );
 }
