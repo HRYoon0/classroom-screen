@@ -33,7 +33,6 @@ export default function WidgetWrapper({
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   // 선택 해제 시 설정 패널도 닫기
@@ -140,7 +139,7 @@ export default function WidgetWrapper({
   return (
     <div
       ref={containerRef}
-      className="absolute flex flex-col select-none group"
+      className="absolute flex flex-col select-none"
       style={{
         left: 0,
         top: 0,
@@ -156,8 +155,6 @@ export default function WidgetWrapper({
         onBringToFront(widget.id);
         onSelect(widget.id);
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {/* 선택 시 파란 테두리 + 리사이즈 핸들 */}
       {isSelected && (
