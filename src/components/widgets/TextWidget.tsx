@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, memo } from 'react';
+import { useRef, useState, useEffect, useCallback, memo } from 'react';
 
 interface Props {
   config: Record<string, unknown>;
@@ -97,6 +97,7 @@ function TextWidget({ config, onConfigChange }: Props) {
   const color = (config.color as string) || '#1e293b';
   const editorRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const el = editorRef.current;
@@ -177,7 +178,8 @@ function TextWidget({ config, onConfigChange }: Props) {
         contentEditable
         suppressContentEditableWarning
         spellCheck={false}
-        onBlur={saveContent}
+        onFocus={() => setIsEditing(true)}
+        onBlur={() => { saveContent(); setIsEditing(false); }}
         onInput={saveContent}
         data-placeholder="텍스트를 입력하세요..."
         style={{
@@ -185,17 +187,36 @@ function TextWidget({ config, onConfigChange }: Props) {
           top: 0,
           left: 0,
           right: 0,
-          bottom: 40,
+          bottom: isEditing ? 40 : 0,
           overflowY: 'auto',
           outline: 'none',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
+          transition: 'bottom 0.15s',
         }}
       />
 
-      {/* 하단 서식 도구 모음 */}
+      {/* 하단 서식 도구 모음 — 편집 중에만 표시 */}
       <div
-        className="absolute bottom-0 left-0 right-0 flex items-center gap-1 pt-2 pb-1 border-t border-slate-100 flex-wrap bg-white/80 backdrop-blur-sm"
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          opacity: isEditing ? 1 : 0,
+          pointerEvents: isEditing ? 'auto' : 'none',
+          transform: isEditing ? 'translateY(0)' : 'translateY(8px)',
+          transition: 'opacity 0.15s, transform 0.15s',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          paddingTop: '8px',
+          paddingBottom: '4px',
+          borderTop: '1px solid #f1f5f9',
+          flexWrap: 'wrap',
+          background: 'rgba(255,255,255,0.85)',
+          backdropFilter: 'blur(8px)',
+        }}
         onMouseDown={(e) => e.preventDefault()}
       >
         <select
