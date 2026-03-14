@@ -19,16 +19,24 @@ export default function QRCodeWidget({ config, onConfigChange }: Props) {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-3">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px' }}>
       {url ? (
         <>
-          <div className="bg-white p-3 rounded-xl">
+          <div style={{ background: 'white', padding: '12px', borderRadius: '12px' }}>
             <QRCodeSVG value={url} size={140} />
           </div>
-          <p className="text-xs text-slate-500 max-w-full truncate px-2">{url}</p>
+          <p style={{ fontSize: '12px', color: '#64748b', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 8px' }}>{url}</p>
           <button
             onClick={() => onConfigChange({ url: '' })}
-            className="px-3 py-1 bg-slate-100 text-slate-600 rounded text-xs hover:bg-slate-200"
+            style={{
+              padding: '6px 14px',
+              background: '#f1f5f9',
+              color: '#475569',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
           >
             변경
           </button>
@@ -37,16 +45,35 @@ export default function QRCodeWidget({ config, onConfigChange }: Props) {
         <>
           <input
             type="text"
-            className="w-full px-3 py-2 border border-slate-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 text-slate-700"
             placeholder="URL을 입력하세요"
             value={inputUrl}
             onChange={(e) => setInputUrl(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleGenerate()}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              border: '2px solid #e2e8f0',
+              borderRadius: '8px',
+              fontSize: '14px',
+              outline: 'none',
+              color: '#334155',
+              boxSizing: 'border-box',
+            }}
           />
           <button
             onClick={handleGenerate}
-            className="px-4 py-1.5 bg-indigo-500 text-white rounded text-sm font-semibold hover:bg-indigo-600 disabled:opacity-50"
             disabled={!inputUrl.trim()}
+            style={{
+              padding: '10px 20px',
+              background: !inputUrl.trim() ? '#cbd5e1' : '#6366f1',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: !inputUrl.trim() ? 'default' : 'pointer',
+            }}
           >
             생성
           </button>
