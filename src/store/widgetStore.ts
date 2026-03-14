@@ -21,13 +21,14 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
     case 'ADD': {
       const meta = WIDGET_META[action.widgetType];
       const savedConfig = loadWidgetConfig(action.widgetType);
+      const savedPos = loadWidgetPosition(action.widgetType);
       const newWidget: WidgetData = {
         id: uuid(),
         type: action.widgetType,
-        x: 100 + Math.random() * 200,
-        y: 80 + Math.random() * 100,
-        w: meta.defaultW,
-        h: meta.defaultH,
+        x: savedPos?.x ?? (100 + Math.random() * 200),
+        y: savedPos?.y ?? (80 + Math.random() * 100),
+        w: savedPos?.w ?? meta.defaultW,
+        h: savedPos?.h ?? meta.defaultH,
         zIndex: getMaxZ(state) + 1,
         config: savedConfig,
       };
@@ -35,8 +36,11 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
     }
     case 'REMOVE': {
       const removing = state.find((w) => w.id === action.id);
-      if (removing && Object.keys(removing.config).length > 0) {
-        saveWidgetConfig(removing.type, removing.config);
+      if (removing) {
+        saveWidgetPosition(removing.type, { x: removing.x, y: removing.y, w: removing.w, h: removing.h });
+        if (Object.keys(removing.config).length > 0) {
+          saveWidgetConfig(removing.type, removing.config);
+        }
       }
       return state.filter((w) => w.id !== action.id);
     }
@@ -71,8 +75,13 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
 
 // 위젯 타입별 마지막 설정 저장/복원
 const CONFIG_MEMORY_KEY = 'classboard-widget-configs';
+const POSITION_MEMORY_KEY = 'classboard-widget-positions';
+
+// config 저장 시 초기화해야 하는 위젯 타입 (재추가 시 빈 config)
+const RESET_ON_ADD: Set<WidgetType> = new Set(['poll']);
 
 function saveWidgetConfig(type: WidgetType, config: Record<string, unknown>) {
+  if (RESET_ON_ADD.has(type)) return; // 투표 등은 config 저장 안 함
   try {
     const raw = localStorage.getItem(CONFIG_MEMORY_KEY);
     const all = raw ? JSON.parse(raw) : {};
@@ -82,6 +91,7 @@ function saveWidgetConfig(type: WidgetType, config: Record<string, unknown>) {
 }
 
 function loadWidgetConfig(type: WidgetType): Record<string, unknown> {
+  if (RESET_ON_ADD.has(type)) return {};
   try {
     const raw = localStorage.getItem(CONFIG_MEMORY_KEY);
     if (!raw) return {};
@@ -89,6 +99,27 @@ function loadWidgetConfig(type: WidgetType): Record<string, unknown> {
     return all[type] || {};
   } catch {
     return {};
+  }
+}
+
+// 위젯 타입별 마지막 위치/크기 저장/복원
+function saveWidgetPosition(type: WidgetType, pos: { x: number; y: number; w: number; h: number }) {
+  try {
+    const raw = localStorage.getItem(POSITION_MEMORY_KEY);
+    const all = raw ? JSON.parse(raw) : {};
+    all[type] = pos;
+    localStorage.setItem(POSITION_MEMORY_KEY, JSON.stringify(all));
+  } catch { /* 무시 */ }
+}
+
+function loadWidgetPosition(type: WidgetType): { x: number; y: number; w: number; h: number } | null {
+  try {
+    const raw = localStorage.getItem(POSITION_MEMORY_KEY);
+    if (!raw) return null;
+    const all = JSON.parse(raw);
+    return all[type] || null;
+  } catch {
+    return null;
   }
 }
 
