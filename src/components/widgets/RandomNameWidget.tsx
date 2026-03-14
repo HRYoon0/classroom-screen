@@ -56,12 +56,8 @@ export default function RandomNameWidget({ config, onConfigChange }: Props) {
           placeholder={'학생 이름을 한 줄에 하나씩 입력하세요\n예:\n김철수\n이영희\n박민수'}
           value={nameList}
           onChange={(e) => onConfigChange({ names: e.target.value })}
-          onKeyDown={(e) => {
-            // 엔터키로 다음 줄 입력 허용
-            if (e.key === 'Enter') {
-              e.stopPropagation();
-            }
-          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         />
         <button
           onClick={() => names.length > 0 && setShowInput(false)}
