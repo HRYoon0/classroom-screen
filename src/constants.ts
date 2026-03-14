@@ -11,7 +11,7 @@ export const WIDGET_META: Record<WidgetType, WidgetMeta> = {
   poll: { type: 'poll', label: '투표', icon: '📊', defaultW: 570, defaultH: 480 },
   text: { type: 'text', label: '텍스트', icon: '📝', defaultW: 360, defaultH: 200 },
   drawing: { type: 'drawing', label: '그림판', icon: '🎨', defaultW: 460, defaultH: 360 },
-  'qr-code': { type: 'qr-code', label: 'QR 코드', icon: '📱', defaultW: 280, defaultH: 320 },
+  'qr-code': { type: 'qr-code', label: 'QR 코드', icon: '📱', defaultW: 420, defaultH: 480 },
   dice: { type: 'dice', label: '주사위', icon: '🎲', defaultW: 420, defaultH: 400 },
   'work-symbols': { type: 'work-symbols', label: '작업 기호', icon: '📋', defaultW: 460, defaultH: 460 },
 };
