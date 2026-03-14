@@ -5,6 +5,7 @@ import WidgetWrapper from './WidgetWrapper';
 import TimerWidget from './widgets/TimerWidget';
 import TimerSettings from './widgets/TimerSettings';
 import ClockWidget from './widgets/ClockWidget';
+import ClockSettings from './widgets/ClockSettings';
 import StopwatchWidget from './widgets/StopwatchWidget';
 import TrafficLightWidget from './widgets/TrafficLightWidget';
 import NoiseMeterWidget from './widgets/NoiseMeterWidget';
@@ -38,7 +39,7 @@ function renderWidgetContent(
     case 'timer':
       return <TimerWidget config={widget.config} onConfigChange={onConfigChange} />;
     case 'clock':
-      return <ClockWidget />;
+      return <ClockWidget config={widget.config} onConfigChange={onConfigChange} />;
     case 'stopwatch':
       return <StopwatchWidget />;
     case 'traffic-light':
@@ -86,6 +87,8 @@ export default function WidgetRenderer({
     switch (widget.type) {
       case 'timer':
         return <TimerSettings config={widget.config} onConfigChange={configHandler} />;
+      case 'clock':
+        return <ClockSettings config={widget.config} onConfigChange={configHandler} />;
       default:
         return undefined;
     }
