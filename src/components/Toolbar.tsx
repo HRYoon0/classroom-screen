@@ -37,7 +37,7 @@ const MAIN_ITEMS: { type: string; icon: React.ReactNode; color: string; label: s
   { type: 'random-name',    icon: <IoPersonOutline size={SZ} />,        color: '#0ea5e9', label: '이름 뽑기' },
   { type: 'noise-meter',    icon: <IoVolumeHighOutline size={SZ} />,    color: '#22c55e', label: '소음 측정' },
   { type: 'text',           icon: <IoTextOutline size={SZ} />,          color: '#8b5cf6', label: '텍스트' },
-  { type: 'work-symbols',   icon: <IoListOutline size={SZ} />,          color: '#f59e0b', label: '작업 기호' },
+  { type: 'work-symbols',   icon: <IoListOutline size={SZ} />,          color: '#f59e0b', label: '활동 안내' },
   { type: 'traffic-light',  icon: <TrafficLightIcon />,                  color: '#64748b', label: '신호등' },
   { type: 'timer',          icon: <IoTimerOutline size={SZ} />,          color: '#6366f1', label: '타이머' },
   { type: 'clock',          icon: <IoTimeOutline size={SZ} />,           color: '#0ea5e9', label: '시계' },
