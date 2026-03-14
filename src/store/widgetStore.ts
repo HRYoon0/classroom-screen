@@ -27,8 +27,8 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
         type: action.widgetType,
         x: savedPos?.x ?? (100 + Math.random() * 200),
         y: savedPos?.y ?? (80 + Math.random() * 100),
-        w: savedPos?.w ?? meta.defaultW,
-        h: savedPos?.h ?? meta.defaultH,
+        w: meta.defaultW,
+        h: meta.defaultH,
         zIndex: getMaxZ(state) + 1,
         config: savedConfig,
       };
