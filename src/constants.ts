@@ -45,10 +45,10 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
   {
     name: '봄',
     photos: [
-      U('photo-1462275646964-a0e3c11f18a6'),
-      U('photo-1490750967868-88aa4f44baee'),
+      U('photo-1553530979-7ee52a2670c4'),
+      U('photo-1459411552884-841db9b3cc2a'),
       U('photo-1522748906645-95d8adfd52c7'),
-      U('photo-1588530343078-4466e9680e0b'),
+      U('photo-1490730141103-6cac27aaab94'),
       U('photo-1560717789-0ac7c58ac90a'),
       U('photo-1487530811176-3780de880c2d'),
     ],
@@ -67,10 +67,10 @@ export const PHOTO_BACKGROUNDS: PhotoCategory[] = [
   {
     name: '동물',
     photos: [
-      U('photo-1474511320723-9a56873571b7'),
+      U('photo-1535083783855-76ae62b2914e'),
       U('photo-1437622368342-7a3d73a34c8f'),
       U('photo-1484406566174-9da000fda645'),
-      U('photo-1425082661507-d6d2ccde3e3c'),
+      U('photo-1497752531616-c3afd9760a11'),
       U('photo-1517849845537-4d257902454a'),
       U('photo-1474314881477-04c4aac40a0e'),
     ],
