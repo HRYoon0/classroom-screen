@@ -30,7 +30,6 @@ export default function DiceWidget() {
   const [values, setValues] = useState<number[]>([1]);
   const [isRolling, setIsRolling] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
-  const [showImpact, setShowImpact] = useState(false);
   const timers = useRef<number[]>([]);
   const shuffleRef = useRef<number>(0);
 
@@ -57,21 +56,13 @@ export default function DiceWidget() {
     t(1300, () => setPhase('fall'));
 
     // 5: 첫 바운스 (높게)
-    t(1550, () => {
-      setPhase('bounce1');
-      setShowImpact(true);
-      setTimeout(() => setShowImpact(false), 250);
-    });
+    t(1550, () => setPhase('bounce1'));
 
     // 6: 두 번째 낙하
     t(1750, () => setPhase('fall2'));
 
     // 7: 두 번째 바운스
-    t(1900, () => {
-      setPhase('bounce2');
-      setShowImpact(true);
-      setTimeout(() => setShowImpact(false), 200);
-    });
+    t(1900, () => setPhase('bounce2'));
 
     // 8: 세 번째 낙하
     t(2050, () => setPhase('fall3'));
@@ -171,47 +162,6 @@ export default function DiceWidget() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px', overflow: 'hidden', position: 'relative' }}>
 
-      {/* 충격파 이펙트 (2중) */}
-      {showImpact && (
-        <>
-          <div style={{
-            position: 'absolute', left: '50%', top: '55%',
-            width: '20px', height: '20px',
-            transform: 'translate(-50%, -50%)',
-            borderRadius: '50%',
-            border: '4px solid rgba(99,102,241,0.5)',
-            animation: 'impact-wave 0.5s ease-out forwards',
-            pointerEvents: 'none',
-          }} />
-          <div style={{
-            position: 'absolute', left: '50%', top: '55%',
-            width: '20px', height: '20px',
-            transform: 'translate(-50%, -50%)',
-            borderRadius: '50%',
-            border: '3px solid rgba(99,102,241,0.3)',
-            animation: 'impact-wave 0.5s ease-out 0.1s forwards',
-            pointerEvents: 'none',
-          }} />
-          {/* 착지 파편 */}
-          {Array.from({ length: 8 }).map((_, i) => {
-            const angle = i * 45;
-            return (
-              <div key={i} style={{
-                position: 'absolute', left: '50%', top: '55%',
-                width: '6px', height: '6px',
-                borderRadius: '50%',
-                background: '#6366f1',
-                opacity: 0,
-                animation: `impact-spark 0.4s ease-out forwards`,
-                '--spark-x': `${Math.cos(angle * Math.PI / 180) * 60}px`,
-                '--spark-y': `${Math.sin(angle * Math.PI / 180) * 40}px`,
-                pointerEvents: 'none',
-              } as React.CSSProperties} />
-            );
-          })}
-        </>
-      )}
-
       {/* 주사위 영역 */}
       <div style={{
         display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center',
@@ -267,16 +217,6 @@ export default function DiceWidget() {
         </button>
       </div>
 
-      <style>{`
-        @keyframes impact-wave {
-          0% { width: 20px; height: 20px; opacity: 0.8; border-width: 4px; }
-          100% { width: 300px; height: 300px; opacity: 0; border-width: 1px; }
-        }
-        @keyframes impact-spark {
-          0% { transform: translate(-50%, -50%) translate(0, 0) scale(1); opacity: 0.9; }
-          100% { transform: translate(-50%, -50%) translate(var(--spark-x), var(--spark-y)) scale(0); opacity: 0; }
-        }
-      `}</style>
     </div>
   );
 }
