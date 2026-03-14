@@ -195,25 +195,28 @@ function TextWidget({ config, onConfigChange }: Props) {
         }}
       />
 
-      {/* 하단 서식 도구 모음 — 편집 중에만 오버레이로 표시 */}
+      {/* 하단 서식 도구 모음 — 편집 중에만 위젯 아래에 표시 */}
       <div
         style={{
           position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
+          top: '100%',
+          left: '-1px',
+          right: '-1px',
           opacity: isEditing ? 1 : 0,
           pointerEvents: isEditing ? 'auto' : 'none',
-          transform: isEditing ? 'translateY(0)' : 'translateY(8px)',
+          transform: isEditing ? 'translateY(0)' : 'translateY(-4px)',
           transition: 'opacity 0.15s, transform 0.15s',
           display: 'flex',
           alignItems: 'center',
           gap: '4px',
-          padding: '6px 8px',
+          padding: '8px 10px',
           flexWrap: 'wrap',
-          background: 'rgba(255,255,255,0.92)',
+          background: 'rgba(255,255,255,0.95)',
           backdropFilter: 'blur(12px)',
           borderRadius: '0 0 12px 12px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(255,255,255,0.6)',
+          borderTop: 'none',
           zIndex: 10,
         }}
         onMouseDown={(e) => e.preventDefault()}

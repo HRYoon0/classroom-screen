@@ -179,10 +179,11 @@ export default function WidgetWrapper({
 
       {/* 위젯 본체 */}
       <div
-        className={`${widget.config?.transparent ? '' : 'widget-card'} flex flex-col h-full w-full overflow-hidden cursor-grab active:cursor-grabbing [&_[contenteditable]]:cursor-text`}
+        className={`${widget.config?.transparent ? '' : 'widget-card'} flex flex-col h-full w-full cursor-grab active:cursor-grabbing [&_[contenteditable]]:cursor-text`}
+        style={{ overflow: 'visible' }}
         onMouseDown={handleDragStart}
       >
-        <div className="flex-1 overflow-hidden min-h-0" style={{ padding: 24 }}>{children}</div>
+        <div className="flex-1 min-h-0" style={{ padding: 24, overflow: 'hidden' }}>{children}</div>
       </div>
 
       {/* 플로팅 툴바 (삭제 + 설정) */}
