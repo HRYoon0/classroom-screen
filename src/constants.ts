@@ -13,7 +13,7 @@ export const WIDGET_META: Record<WidgetType, WidgetMeta> = {
   drawing: { type: 'drawing', label: '그림판', icon: '🎨', defaultW: 460, defaultH: 360 },
   'qr-code': { type: 'qr-code', label: 'QR 코드', icon: '📱', defaultW: 420, defaultH: 480 },
   dice: { type: 'dice', label: '주사위', icon: '🎲', defaultW: 420, defaultH: 400 },
-  'work-symbols': { type: 'work-symbols', label: '작업 기호', icon: '📋', defaultW: 460, defaultH: 460 },
+  'work-symbols': { type: 'work-symbols', label: '활동 안내', icon: '📋', defaultW: 460, defaultH: 460 },
 };
 
 export const WIDGET_LIST = Object.values(WIDGET_META);
