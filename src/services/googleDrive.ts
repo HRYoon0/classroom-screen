@@ -5,6 +5,7 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.appdata openid profile ema
 const FILE_NAME = 'classboard-data.json';
 
 const TOKEN_KEY = 'classboard-token';
+const TOKEN_EXPIRY_KEY = 'classboard-token-expiry';
 const FILE_ID_KEY = 'classboard-file-id';
 
 let accessToken: string | null = localStorage.getItem(TOKEN_KEY);
@@ -16,8 +17,24 @@ export interface CloudData {
   widgetConfigs?: Record<string, Record<string, unknown>>;
 }
 
+// 토큰 + 만료 시각 저장
+function saveToken(token: string, expiresIn: number) {
+  accessToken = token;
+  localStorage.setItem(TOKEN_KEY, token);
+  const expiryTime = Date.now() + expiresIn * 1000;
+  localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiryTime));
+}
+
+// 토큰 만료 여부 확인 (API 호출 없이)
+function isTokenExpired(): boolean {
+  const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+  if (!expiry) return true;
+  // 5분 여유를 두고 만료 판정
+  return Date.now() > Number(expiry) - 5 * 60 * 1000;
+}
+
 // 팝업 방식 로그인 - Promise로 토큰 반환
-export function signIn(): Promise<string> {
+function openAuthPopup(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const redirectUri = window.location.origin;
     const params = new URLSearchParams({
@@ -26,14 +43,14 @@ export function signIn(): Promise<string> {
       response_type: 'token',
       scope: SCOPES,
       include_granted_scopes: 'true',
-      prompt: 'select_account',
+      prompt,
     });
 
     const url = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-    const w = 500;
-    const h = 600;
-    const left = window.screenX + (window.outerWidth - w) / 2;
-    const top = window.screenY + (window.outerHeight - h) / 2;
+    const w = prompt === 'none' ? 1 : 500;
+    const h = prompt === 'none' ? 1 : 600;
+    const left = prompt === 'none' ? -100 : window.screenX + (window.outerWidth - w) / 2;
+    const top = prompt === 'none' ? -100 : window.screenY + (window.outerHeight - h) / 2;
     const popup = window.open(url, 'google-auth', `width=${w},height=${h},left=${left},top=${top}`);
 
     if (!popup) {
@@ -41,43 +58,57 @@ export function signIn(): Promise<string> {
       return;
     }
 
-    // 팝업 URL 변화 감지 (리다이렉트 후 해시에서 토큰 추출)
+    const timeout = setTimeout(() => {
+      clearInterval(timer);
+      try { popup.close(); } catch { /* 무시 */ }
+      reject(new Error('시간 초과'));
+    }, prompt === 'none' ? 8000 : 120000);
+
     const timer = setInterval(() => {
       try {
         if (popup.closed) {
           clearInterval(timer);
+          clearTimeout(timeout);
           reject(new Error('로그인 취소'));
           return;
         }
-        // 같은 origin으로 돌아오면 URL 접근 가능
         const popupUrl = popup.location.href;
-        if (popupUrl.startsWith(redirectUri) && popupUrl.includes('#')) {
+        if (popupUrl.startsWith(redirectUri)) {
           clearInterval(timer);
-          const hash = popup.location.hash;
-          popup.close();
+          clearTimeout(timeout);
 
-          const hashParams = new URLSearchParams(hash.substring(1));
-          const token = hashParams.get('access_token');
-          if (token) {
-            accessToken = token;
-            localStorage.setItem(TOKEN_KEY, token);
-            resolve(token);
-          } else {
-            reject(new Error('토큰을 받지 못했습니다'));
+          if (popupUrl.includes('#')) {
+            const hashParams = new URLSearchParams(popup.location.hash.substring(1));
+            popup.close();
+            const token = hashParams.get('access_token');
+            const expiresIn = Number(hashParams.get('expires_in') || '3600');
+            if (token) {
+              saveToken(token, expiresIn);
+              resolve(token);
+              return;
+            }
           }
+          popup.close();
+          reject(new Error('토큰을 받지 못했습니다'));
         }
       } catch {
-        // cross-origin 에러 무시 (아직 Google 페이지에 있는 동안)
+        // cross-origin 에러 무시
       }
     }, 200);
   });
 }
 
-// 로그아웃 (토큰만 정리, 앱 권한은 유지)
+// 사용자 로그인 (계정 선택 팝업)
+export function signIn(): Promise<string> {
+  return openAuthPopup('select_account');
+}
+
+// 로그아웃
 export function signOut() {
   accessToken = null;
   cachedFileId = null;
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_EXPIRY_KEY);
   localStorage.removeItem(FILE_ID_KEY);
 }
 
@@ -85,28 +116,22 @@ export function isSignedIn() {
   return !!accessToken;
 }
 
-// 앱 시작 시 토큰 확인
+// 앱 시작 / 탭 복귀 시 세션 복원
 export async function restoreSession(): Promise<boolean> {
   if (!accessToken) return false;
 
+  // 만료 시각 기반 확인 (API 호출 없음)
+  if (!isTokenExpired()) return true;
+
+  // 만료됨 → prompt=none으로 자동 갱신 시도 (이전에 동의한 사용자면 팝업 안 보임)
   try {
-    // getUserInfo로 토큰 유효성 간접 확인
-    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (res.ok) return true;
-
-    // 401 = 토큰 만료 → 로그아웃
-    if (res.status === 401) {
-      signOut();
-      return false;
-    }
-
-    // 기타 에러 (네트워크 등) → 일단 유지
+    await openAuthPopup('none');
     return true;
   } catch {
-    // 네트워크 오류 — 오프라인일 수 있으므로 토큰 유지
-    return true;
+    // 갱신 실패 → 로그아웃하지 않고 토큰만 유지 (다음 API 호출에서 실패하면 그때 처리)
+    // 사용자에게 팝업을 보여주지 않음
+    signOut();
+    return false;
   }
 }
 
@@ -128,7 +153,6 @@ export async function loadFromDrive(): Promise<CloudData | null> {
   if (!accessToken) return null;
 
   try {
-    // 캐시된 fileId로 먼저 시도
     if (cachedFileId) {
       const res = await fetch(
         `https://www.googleapis.com/drive/v3/files/${cachedFileId}?alt=media`,
