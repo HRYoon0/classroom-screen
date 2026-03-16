@@ -1,27 +1,49 @@
 import { useReducer, useCallback, useEffect, useRef } from 'react';
 import { v4 as uuid } from 'uuid';
-import type { WidgetData, WidgetType } from '../types/widget';
-import { WIDGET_META } from '../constants';
+import type { WidgetData, WidgetType, PageData } from '../types/widget';
+import { WIDGET_META, BACKGROUNDS } from '../constants';
 
-// 위젯 상태 액션 타입
+// ── 상태 & 액션 타입 ──
+
+interface StoreState {
+  pages: PageData[];
+  currentPageIndex: number;
+}
+
 type Action =
   | { type: 'ADD'; widgetType: WidgetType }
   | { type: 'REMOVE'; id: string }
   | { type: 'UPDATE'; id: string; data: Partial<WidgetData> }
   | { type: 'UPDATE_CONFIG'; id: string; config: Record<string, unknown> }
   | { type: 'BRING_TO_FRONT'; id: string }
-  | { type: 'LOAD'; widgets: WidgetData[] };
+  | { type: 'SET_BACKGROUND'; background: string }
+  | { type: 'ADD_PAGE' }
+  | { type: 'REMOVE_PAGE' }
+  | { type: 'SWITCH_PAGE'; index: number }
+  | { type: 'LOAD_ALL'; pages: PageData[] };
 
 function getMaxZ(widgets: WidgetData[]) {
   return widgets.reduce((max, w) => Math.max(max, w.zIndex), 0);
 }
 
-function reducer(state: WidgetData[], action: Action): WidgetData[] {
+// 현재 페이지의 위젯 배열을 변환하는 헬퍼
+function updateCurrentPageWidgets(
+  state: StoreState,
+  fn: (widgets: WidgetData[]) => WidgetData[]
+): StoreState {
+  const pages = state.pages.map((p, i) =>
+    i === state.currentPageIndex ? { ...p, widgets: fn(p.widgets) } : p
+  );
+  return { ...state, pages };
+}
+
+function reducer(state: StoreState, action: Action): StoreState {
   switch (action.type) {
     case 'ADD': {
       const meta = WIDGET_META[action.widgetType];
       const savedConfig = loadWidgetConfig(action.widgetType);
       const savedPos = loadWidgetPosition(action.widgetType);
+      const currentWidgets = state.pages[state.currentPageIndex]?.widgets || [];
       const newWidget: WidgetData = {
         id: uuid(),
         type: action.widgetType,
@@ -29,59 +51,87 @@ function reducer(state: WidgetData[], action: Action): WidgetData[] {
         y: savedPos?.y ?? (80 + Math.random() * 100),
         w: meta.defaultW,
         h: meta.defaultH,
-        zIndex: getMaxZ(state) + 1,
+        zIndex: getMaxZ(currentWidgets) + 1,
         config: savedConfig,
       };
-      return [...state, newWidget];
+      return updateCurrentPageWidgets(state, (ws) => [...ws, newWidget]);
     }
     case 'REMOVE': {
-      const removing = state.find((w) => w.id === action.id);
+      const currentWidgets = state.pages[state.currentPageIndex]?.widgets || [];
+      const removing = currentWidgets.find((w) => w.id === action.id);
       if (removing) {
         saveWidgetPosition(removing.type, { x: removing.x, y: removing.y, w: removing.w, h: removing.h });
         if (Object.keys(removing.config).length > 0) {
           saveWidgetConfig(removing.type, removing.config);
         }
       }
-      return state.filter((w) => w.id !== action.id);
+      return updateCurrentPageWidgets(state, (ws) => ws.filter((w) => w.id !== action.id));
     }
     case 'UPDATE':
-      return state.map((w) =>
-        w.id === action.id ? { ...w, ...action.data } : w
+      return updateCurrentPageWidgets(state, (ws) =>
+        ws.map((w) => (w.id === action.id ? { ...w, ...action.data } : w))
       );
     case 'UPDATE_CONFIG': {
-      const updated = state.map((w) =>
-        w.id === action.id
-          ? { ...w, config: { ...w.config, ...action.config } }
-          : w
+      const result = updateCurrentPageWidgets(state, (ws) =>
+        ws.map((w) =>
+          w.id === action.id ? { ...w, config: { ...w.config, ...action.config } } : w
+        )
       );
-      const target = updated.find((w) => w.id === action.id);
+      const target = result.pages[result.currentPageIndex].widgets.find((w) => w.id === action.id);
       if (target) saveWidgetConfig(target.type, target.config);
-      return updated;
+      return result;
     }
     case 'BRING_TO_FRONT': {
-      const maxZ = getMaxZ(state);
-      const target = state.find((w) => w.id === action.id);
+      const currentWidgets = state.pages[state.currentPageIndex]?.widgets || [];
+      const maxZ = getMaxZ(currentWidgets);
+      const target = currentWidgets.find((w) => w.id === action.id);
       if (target && target.zIndex === maxZ) return state;
-      return state.map((w) =>
-        w.id === action.id ? { ...w, zIndex: maxZ + 1 } : w
+      return updateCurrentPageWidgets(state, (ws) =>
+        ws.map((w) => (w.id === action.id ? { ...w, zIndex: maxZ + 1 } : w))
       );
     }
-    case 'LOAD':
-      return action.widgets;
+    case 'SET_BACKGROUND': {
+      const pages = state.pages.map((p, i) =>
+        i === state.currentPageIndex ? { ...p, background: action.background } : p
+      );
+      return { ...state, pages };
+    }
+    case 'ADD_PAGE': {
+      const newPage: PageData = {
+        id: uuid(),
+        widgets: [],
+        background: BACKGROUNDS[0],
+      };
+      return {
+        pages: [...state.pages, newPage],
+        currentPageIndex: state.pages.length, // 새 페이지로 이동
+      };
+    }
+    case 'REMOVE_PAGE': {
+      if (state.pages.length <= 1) return state;
+      const pages = state.pages.filter((_, i) => i !== state.currentPageIndex);
+      const newIndex = Math.min(state.currentPageIndex, pages.length - 1);
+      return { pages, currentPageIndex: newIndex };
+    }
+    case 'SWITCH_PAGE': {
+      if (action.index < 0 || action.index >= state.pages.length) return state;
+      return { ...state, currentPageIndex: action.index };
+    }
+    case 'LOAD_ALL':
+      return { pages: action.pages, currentPageIndex: 0 };
     default:
       return state;
   }
 }
 
-// 위젯 타입별 마지막 설정 저장/복원
+// ── 위젯 config/position 기억 ──
+
 const CONFIG_MEMORY_KEY = 'classboard-widget-configs';
 const POSITION_MEMORY_KEY = 'classboard-widget-positions';
-
-// config 저장 시 초기화해야 하는 위젯 타입 (재추가 시 빈 config)
 const RESET_ON_ADD: Set<WidgetType> = new Set(['poll', 'text']);
 
 function saveWidgetConfig(type: WidgetType, config: Record<string, unknown>) {
-  if (RESET_ON_ADD.has(type)) return; // 투표 등은 config 저장 안 함
+  if (RESET_ON_ADD.has(type)) return;
   try {
     const raw = localStorage.getItem(CONFIG_MEMORY_KEY);
     const all = raw ? JSON.parse(raw) : {};
@@ -102,7 +152,6 @@ function loadWidgetConfig(type: WidgetType): Record<string, unknown> {
   }
 }
 
-// 위젯 타입별 마지막 위치/크기 저장/복원
 function saveWidgetPosition(type: WidgetType, pos: { x: number; y: number; w: number; h: number }) {
   try {
     const raw = localStorage.getItem(POSITION_MEMORY_KEY);
@@ -123,7 +172,6 @@ function loadWidgetPosition(type: WidgetType): { x: number; y: number; w: number
   }
 }
 
-// 전체 위젯 설정 가져오기/설정하기 (클라우드 동기화용)
 export function getAllWidgetConfigs(): Record<string, Record<string, unknown>> {
   try {
     const raw = localStorage.getItem(CONFIG_MEMORY_KEY);
@@ -139,111 +187,122 @@ export function setAllWidgetConfigs(configs: Record<string, Record<string, unkno
   } catch { /* 무시 */ }
 }
 
-// 로컬 스토리지 키
-const STORAGE_KEY = 'classboard-widgets';
-const BG_STORAGE_KEY = 'classboard-bg';
-const CANVAS_VERSION_KEY = 'classboard-canvas-version';
-const VIRTUAL_WIDTH = 1920;
-const VIRTUAL_HEIGHT = 1080;
+// ── localStorage 키 ──
 
-// 옛날 픽셀 좌표 → 가상 캔버스 좌표로 1회 변환
-function migrateToVirtualCanvas(widgets: WidgetData[]): WidgetData[] {
-  if (widgets.length === 0) return widgets;
-  if (localStorage.getItem(CANVAS_VERSION_KEY) === '2') return widgets;
+const PAGES_STORAGE_KEY = 'classboard-pages';
+const CURRENT_PAGE_KEY = 'classboard-current-page';
+// 이전 버전 키 (마이그레이션용)
+const OLD_WIDGETS_KEY = 'classboard-widgets';
+const OLD_BG_KEY = 'classboard-bg';
 
-  const scaleX = VIRTUAL_WIDTH / window.innerWidth;
-  const scaleY = VIRTUAL_HEIGHT / window.innerHeight;
+// ── 마이그레이션 + 로드 ──
 
-  const migrated = widgets.map((w) => ({
-    ...w,
-    x: w.x * scaleX,
-    y: w.y * scaleY,
-    w: w.w * scaleX,
-    h: w.h * scaleY,
-  }));
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-  localStorage.setItem(CANVAS_VERSION_KEY, '2');
-  return migrated;
-}
-
-function loadWidgets(): WidgetData[] {
+function loadInitialState(): StoreState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const widgets: WidgetData[] = JSON.parse(raw);
-    return migrateToVirtualCanvas(widgets);
-  } catch {
-    return [];
-  }
+    // 새 형식 먼저 확인
+    const pagesRaw = localStorage.getItem(PAGES_STORAGE_KEY);
+    if (pagesRaw) {
+      const pages: PageData[] = JSON.parse(pagesRaw);
+      const idx = Number(localStorage.getItem(CURRENT_PAGE_KEY) || '0');
+      return { pages, currentPageIndex: Math.min(idx, pages.length - 1) };
+    }
+
+    // 이전 형식 마이그레이션
+    const oldWidgetsRaw = localStorage.getItem(OLD_WIDGETS_KEY);
+    const oldBg = localStorage.getItem(OLD_BG_KEY) || BACKGROUNDS[0];
+    if (oldWidgetsRaw) {
+      const widgets: WidgetData[] = JSON.parse(oldWidgetsRaw);
+      const page: PageData = { id: uuid(), widgets, background: oldBg };
+      // 마이그레이션 후 새 형식으로 저장
+      localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify([page]));
+      localStorage.removeItem(OLD_WIDGETS_KEY);
+      localStorage.removeItem(OLD_BG_KEY);
+      return { pages: [page], currentPageIndex: 0 };
+    }
+  } catch { /* 무시 */ }
+
+  // 완전 새로운 사용자
+  return {
+    pages: [{ id: uuid(), widgets: [], background: BACKGROUNDS[0] }],
+    currentPageIndex: 0,
+  };
 }
 
-export function loadBackground(): string {
-  return localStorage.getItem(BG_STORAGE_KEY) || '';
-}
-
-export function saveBackground(bg: string) {
-  localStorage.setItem(BG_STORAGE_KEY, bg);
-}
+// ── Hook ──
 
 export function useWidgetStore() {
-  const [widgets, dispatch] = useReducer(reducer, [], loadWidgets);
+  const [state, dispatch] = useReducer(reducer, null, loadInitialState);
 
-  // 상태가 변경될 때마다 로컬 스토리지에 저장
-  const saveToStorage = useCallback((ws: WidgetData[]) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(ws));
+  const { pages, currentPageIndex } = state;
+  const currentPage = pages[currentPageIndex];
+  const widgets = currentPage?.widgets || [];
+  const background = currentPage?.background || BACKGROUNDS[0];
+
+  // 상태 변경 시 localStorage 자동 저장
+  const saveTimerRef = useRef<number>(0);
+  useEffect(() => {
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      localStorage.setItem(PAGES_STORAGE_KEY, JSON.stringify(pages));
+      localStorage.setItem(CURRENT_PAGE_KEY, String(currentPageIndex));
+    }, 300);
+  }, [pages, currentPageIndex]);
+
+  const addWidget = useCallback((widgetType: WidgetType) => {
+    dispatch({ type: 'ADD', widgetType });
   }, []);
-
-  const addWidget = useCallback(
-    (widgetType: WidgetType) => {
-      dispatch({ type: 'ADD', widgetType });
-    },
-    []
-  );
 
   const removeWidget = useCallback((id: string) => {
     dispatch({ type: 'REMOVE', id });
   }, []);
 
-  const updateWidget = useCallback(
-    (id: string, data: Partial<WidgetData>) => {
-      dispatch({ type: 'UPDATE', id, data });
-    },
-    []
-  );
+  const updateWidget = useCallback((id: string, data: Partial<WidgetData>) => {
+    dispatch({ type: 'UPDATE', id, data });
+  }, []);
 
-  const updateConfig = useCallback(
-    (id: string, config: Record<string, unknown>) => {
-      dispatch({ type: 'UPDATE_CONFIG', id, config });
-    },
-    []
-  );
+  const updateConfig = useCallback((id: string, config: Record<string, unknown>) => {
+    dispatch({ type: 'UPDATE_CONFIG', id, config });
+  }, []);
 
   const bringToFront = useCallback((id: string) => {
     dispatch({ type: 'BRING_TO_FRONT', id });
   }, []);
 
-  // 위젯 변경 시 자동 저장 (useEffect로 렌더 후 비동기 저장)
-  const saveTimerRef = useRef<number>(0);
-  useEffect(() => {
-    clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = window.setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(widgets));
-    }, 300);
-  }, [widgets]);
+  const setBackground = useCallback((bg: string) => {
+    dispatch({ type: 'SET_BACKGROUND', background: bg });
+  }, []);
 
-  const loadAll = useCallback((ws: WidgetData[]) => {
-    dispatch({ type: 'LOAD', widgets: ws });
+  const addPage = useCallback(() => {
+    dispatch({ type: 'ADD_PAGE' });
+  }, []);
+
+  const removePage = useCallback(() => {
+    dispatch({ type: 'REMOVE_PAGE' });
+  }, []);
+
+  const switchPage = useCallback((index: number) => {
+    dispatch({ type: 'SWITCH_PAGE', index });
+  }, []);
+
+  const loadAllPages = useCallback((p: PageData[]) => {
+    dispatch({ type: 'LOAD_ALL', pages: p });
   }, []);
 
   return {
     widgets,
+    background,
+    pages,
+    currentPageIndex,
+    totalPages: pages.length,
     addWidget,
     removeWidget,
     updateWidget,
     updateConfig,
     bringToFront,
-    saveToStorage,
-    loadAll,
+    setBackground,
+    addPage,
+    removePage,
+    switchPage,
+    loadAllPages,
   };
 }

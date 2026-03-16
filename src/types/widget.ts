@@ -26,6 +26,12 @@ export interface WidgetData {
   config: Record<string, unknown>;
 }
 
+export interface PageData {
+  id: string;
+  widgets: WidgetData[];
+  background: string;
+}
+
 export interface WidgetMeta {
   type: WidgetType;
   label: string;

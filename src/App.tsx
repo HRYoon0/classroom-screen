@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { IoExpand, IoContract, IoCloudUpload, IoCloudDownload } from 'react-icons/io5';
-import { useWidgetStore, loadBackground, saveBackground, getAllWidgetConfigs, setAllWidgetConfigs } from './store/widgetStore';
+import { useWidgetStore, getAllWidgetConfigs, setAllWidgetConfigs } from './store/widgetStore';
 import Toolbar from './components/Toolbar';
 import BackgroundPicker from './components/BackgroundPicker';
 import WidgetRenderer from './components/WidgetRenderer';
-import { BACKGROUNDS } from './constants';
+import PageNavigator from './components/PageNavigator';
 import { useCanvasScale } from './hooks/useCanvasScale';
+import type { PageData } from './types/widget';
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   signIn,
@@ -22,17 +24,22 @@ import {
 function App() {
   const {
     widgets,
+    background,
+    pages,
+    currentPageIndex,
+    totalPages,
     addWidget,
     removeWidget,
     updateWidget,
     updateConfig,
     bringToFront,
-    loadAll,
+    setBackground,
+    addPage,
+    removePage,
+    switchPage,
+    loadAllPages,
   } = useWidgetStore();
 
-  const [background, setBackground] = useState(
-    () => loadBackground() || BACKGROUNDS[0]
-  );
   const { scaleX, scaleY, scaleSize } = useCanvasScale();
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -81,40 +88,45 @@ function App() {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  // Google Auth 초기화는 자동 로드 useEffect에서 처리
-
   const handleBgChange = (bg: string) => {
     setBackground(bg);
-    saveBackground(bg);
   };
 
   // 로그인 로딩 상태
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // 구글 로그인 (팝업 방식)
+  // 클라우드 데이터 → 페이지 로드 헬퍼
+  const loadCloudData = (data: Awaited<ReturnType<typeof loadFromDrive>>) => {
+    if (!data) return;
+    skipAutoSaveRef.current = true;
+    if (data.pages && data.version === 2) {
+      // v2 멀티 페이지
+      loadAllPages(data.pages as PageData[]);
+    } else if (data.widgets) {
+      // v1 하위 호환: 단일 페이지로 변환
+      loadAllPages([{
+        id: uuidv4(),
+        widgets: data.widgets as PageData['widgets'],
+        background: data.background || background,
+      }]);
+    }
+    if (data.widgetConfigs) {
+      setAllWidgetConfigs(data.widgetConfigs);
+    }
+  };
+
+  // 구글 로그인
   const handleSignIn = async () => {
     try {
-      await signIn(); // 팝업에서 토큰 받을 때까지 대기
+      await signIn();
       setLoginLoading(true);
       setSessionExpired(false);
       const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
-      if (info) {
-        setUser(info);
-      }
-      if (data) {
-        skipAutoSaveRef.current = true;
-        loadAll(data.widgets as Parameters<typeof loadAll>[0]);
-        if (data.background) {
-          setBackground(data.background);
-          saveBackground(data.background);
-        }
-        if (data.widgetConfigs) {
-          setAllWidgetConfigs(data.widgetConfigs);
-        }
-      }
+      if (info) setUser(info);
+      loadCloudData(data);
       showMsg(`${info?.name || ''}님 로그인 완료`);
     } catch {
-      // 팝업 닫힘 또는 차단 — 무시
+      // 팝업 닫힘 또는 차단
     }
     setLoginLoading(false);
   };
@@ -132,7 +144,7 @@ function App() {
     }
   }, []);
 
-  // 재로그인 (세션 만료 시 사용자 클릭으로 호출)
+  // 재로그인
   const handleReSignIn = async () => {
     try {
       await reSignIn();
@@ -148,12 +160,12 @@ function App() {
     }
   };
 
-  // 페이지 로드 시: GIS 초기화 후 세션 복원
+  // GIS 초기화 후 세션 복원
   useEffect(() => {
     initGis().then(() => tryRestoreSession()).catch(() => {});
   }, [tryRestoreSession]);
 
-  // 탭이 다시 활성화될 때 토큰 검증 + 갱신
+  // 탭 재활성화 시 토큰 검증
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && isSignedIn()) {
@@ -164,7 +176,7 @@ function App() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [tryRestoreSession]);
 
-  // 구글 로그아웃
+  // 로그아웃
   const handleSignOut = () => {
     signOut();
     setUser(null);
@@ -174,14 +186,12 @@ function App() {
 
   // 자동 저장 (30초 디바운스)
   const autoSaveTimerRef = useRef<number>(0);
-  const skipAutoSaveRef = useRef(false); // 클라우드 로드 직후 자동 저장 방지
-  const widgetsRef = useRef(widgets);
-  const backgroundRef = useRef(background);
-  widgetsRef.current = widgets;
-  backgroundRef.current = background;
+  const skipAutoSaveRef = useRef(false);
+  const pagesRef = useRef(pages);
+  pagesRef.current = pages;
 
   useEffect(() => {
-    if (!user) return; // 로그인 상태에서만 자동 저장
+    if (!user) return;
     if (skipAutoSaveRef.current) {
       skipAutoSaveRef.current = false;
       return;
@@ -190,48 +200,44 @@ function App() {
     clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
       if (!isSignedIn()) return;
-      const ok = await saveToDrive({ widgets: widgetsRef.current, background: backgroundRef.current, widgetConfigs: getAllWidgetConfigs() });
+      const ok = await saveToDrive({
+        pages: pagesRef.current,
+        widgetConfigs: getAllWidgetConfigs(),
+        version: 2,
+      });
       if (ok) showMsg('자동 저장 완료');
     }, 30000);
 
     return () => clearTimeout(autoSaveTimerRef.current);
-  }, [widgets, background, user]);
+  }, [pages, user]);
 
   // 수동 클라우드 저장
   const handleSave = async () => {
-    if (!isSignedIn()) {
-      showMsg('먼저 로그인해주세요');
-      return;
-    }
+    if (!isSignedIn()) { showMsg('먼저 로그인해주세요'); return; }
     setSyncing(true);
-    const ok = await saveToDrive({ widgets, background, widgetConfigs: getAllWidgetConfigs() });
+    const ok = await saveToDrive({ pages, widgetConfigs: getAllWidgetConfigs(), version: 2 });
     setSyncing(false);
     showMsg(ok ? '클라우드에 저장 완료' : '저장 실패');
   };
 
   // 클라우드에서 불러오기
   const handleLoad = async () => {
-    if (!isSignedIn()) {
-      showMsg('먼저 로그인해주세요');
-      return;
-    }
+    if (!isSignedIn()) { showMsg('먼저 로그인해주세요'); return; }
     setSyncing(true);
     const data = await loadFromDrive();
     setSyncing(false);
     if (data) {
-      skipAutoSaveRef.current = true;
-      loadAll(data.widgets as Parameters<typeof loadAll>[0]);
-      if (data.background) {
-        setBackground(data.background);
-        saveBackground(data.background);
-      }
-      if (data.widgetConfigs) {
-        setAllWidgetConfigs(data.widgetConfigs);
-      }
+      loadCloudData(data);
       showMsg('클라우드에서 불러오기 완료');
     } else {
       showMsg('저장된 데이터가 없습니다');
     }
+  };
+
+  // 페이지 전환 시 위젯 선택 해제
+  const handleSwitchPage = (index: number) => {
+    setSelectedWidgetId(null);
+    switchPage(index);
   };
 
   const bgStyle: React.CSSProperties = background.startsWith('url(')
@@ -254,7 +260,6 @@ function App() {
 
       {/* 오른쪽 상단 버튼들 */}
       <div className="absolute top-4 right-4 z-[9999] flex items-center gap-2">
-        {/* 동기화 메시지 */}
         {syncMsg && (
           <div className="h-9 flex items-center gap-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-white/60 text-slate-600 text-xs font-medium" style={{ paddingLeft: 20, paddingRight: 20 }}>
             <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -264,29 +269,21 @@ function App() {
           </div>
         )}
 
-        {/* 클라우드 저장/불러오기 */}
         {user && (
           <>
-            <button
-              onClick={handleSave}
-              disabled={syncing}
+            <button onClick={handleSave} disabled={syncing}
               className="w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-white/60 text-slate-600 hover:bg-white hover:text-indigo-600 transition-colors disabled:opacity-50"
-              title="클라우드에 저장"
-            >
+              title="클라우드에 저장">
               <IoCloudUpload size={18} />
             </button>
-            <button
-              onClick={handleLoad}
-              disabled={syncing}
+            <button onClick={handleLoad} disabled={syncing}
               className="w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-white/60 text-slate-600 hover:bg-white hover:text-indigo-600 transition-colors disabled:opacity-50"
-              title="클라우드에서 불러오기"
-            >
+              title="클라우드에서 불러오기">
               <IoCloudDownload size={18} />
             </button>
           </>
         )}
 
-        {/* 로그인/프로필 */}
         {user ? (
           <div className="relative" ref={userMenuRef}>
             <button
@@ -298,30 +295,16 @@ function App() {
             >
               <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
             </button>
-            {/* 온라인/만료 표시 */}
             <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${
               sessionExpired ? 'bg-amber-400' : 'bg-emerald-400'
             }`} />
-            {/* 세션 만료 텍스트 */}
             {sessionExpired && (
-              <div
-                onClick={handleReSignIn}
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: '6px',
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  background: 'rgba(245,158,11,0.9)',
-                  color: 'white',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                }}
-              >
+              <div onClick={handleReSignIn} style={{
+                position: 'absolute', top: '100%', right: 0, marginTop: '6px',
+                padding: '6px 12px', borderRadius: '8px', background: 'rgba(245,158,11,0.9)',
+                color: 'white', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap',
+                cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              }}>
                 재로그인 필요
               </div>
             )}
@@ -332,11 +315,9 @@ function App() {
                   <p className="text-[11px] text-slate-400 mt-0.5">{user.email}</p>
                 </div>
                 <div style={{ padding: '4px 12px 8px' }}>
-                  <button
-                    onClick={handleSignOut}
+                  <button onClick={handleSignOut}
                     className="w-full text-left text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                    style={{ padding: '8px 12px' }}
-                  >
+                    style={{ padding: '8px 12px' }}>
                     로그아웃
                   </button>
                 </div>
@@ -344,11 +325,9 @@ function App() {
             )}
           </div>
         ) : (
-          <button
-            onClick={handleSignIn}
+          <button onClick={handleSignIn}
             className="w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-white/60 hover:bg-white transition-colors"
-            title="구글 로그인"
-          >
+            title="구글 로그인">
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -358,12 +337,9 @@ function App() {
           </button>
         )}
 
-        {/* 전체화면 */}
-        <button
-          onClick={toggleFullscreen}
+        <button onClick={toggleFullscreen}
           className="w-9 h-9 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-white/60 text-slate-600 hover:bg-white hover:text-slate-800 transition-colors"
-          title={isFullscreen ? '전체화면 종료' : '전체화면'}
-        >
+          title={isFullscreen ? '전체화면 종료' : '전체화면'}>
           {isFullscreen ? <IoContract size={18} /> : <IoExpand size={18} />}
         </button>
       </div>
@@ -410,6 +386,16 @@ function App() {
           onClose={() => setShowSettings(false)}
         />
       )}
+
+      {/* 페이지 네비게이션 */}
+      <PageNavigator
+        currentPage={currentPageIndex}
+        totalPages={totalPages}
+        onPrev={() => handleSwitchPage(currentPageIndex - 1)}
+        onNext={() => handleSwitchPage(currentPageIndex + 1)}
+        onAdd={addPage}
+        onRemove={removePage}
+      />
 
       {/* 하단 왼쪽 제작자 */}
       <div className="absolute bottom-2 left-4 z-[9999]">

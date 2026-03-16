@@ -13,8 +13,13 @@ let cachedFileId: string | null = localStorage.getItem(FILE_ID_KEY);
 let tokenClient: google.accounts.oauth2.TokenClient | null = null;
 
 export interface CloudData {
-  widgets: unknown[];
-  background: string;
+  // v1 하위 호환
+  widgets?: unknown[];
+  background?: string;
+  // v2 멀티 페이지
+  pages?: { id: string; widgets: unknown[]; background: string }[];
+  version?: number;
+  // 공통
   widgetConfigs?: Record<string, Record<string, unknown>>;
 }
 
