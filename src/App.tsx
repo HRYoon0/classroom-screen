@@ -17,7 +17,6 @@ import {
   loadFromDrive,
   getUserInfo,
   restoreSession,
-  reSignIn,
   initGis,
 } from './services/googleDrive';
 
@@ -45,9 +44,18 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
 
-  // 구글 드라이브 관련 상태
-  const [user, setUser] = useState<{ name: string; email: string; picture: string } | null>(null);
-  const [sessionExpired, setSessionExpired] = useState(false);
+  // 구글 드라이브 관련 상태 — 유저 정보를 localStorage에 캐시
+  const [user, setUser] = useState<{ name: string; email: string; picture: string } | null>(() => {
+    try {
+      const cached = localStorage.getItem('classboard-user');
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
+  const saveUser = (info: { name: string; email: string; picture: string } | null) => {
+    setUser(info);
+    if (info) localStorage.setItem('classboard-user', JSON.stringify(info));
+    else localStorage.removeItem('classboard-user');
+  };
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -120,9 +128,8 @@ function App() {
     try {
       await signIn();
       setLoginLoading(true);
-      setSessionExpired(false);
       const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
-      if (info) setUser(info);
+      if (info) saveUser(info);
       loadCloudData(data);
       showMsg(`${info?.name || ''}님 로그인 완료`);
     } catch {
@@ -131,34 +138,16 @@ function App() {
     setLoginLoading(false);
   };
 
-  // 세션 복원 함수
+  // 세션 복원 함수 — 실패해도 로그아웃하지 않음
   const tryRestoreSession = useCallback(async () => {
     if (!isSignedIn()) return;
     const status = await restoreSession();
     if (status === 'valid') {
-      setSessionExpired(false);
       const info = await getUserInfo();
-      if (info) setUser(info);
-    } else if (status === 'expired') {
-      setSessionExpired(true);
+      if (info) saveUser(info);
     }
+    // expired여도 아무것도 안 함 — 백그라운드 타이머가 계속 갱신 시도
   }, []);
-
-  // 재로그인
-  const handleReSignIn = async () => {
-    try {
-      await reSignIn();
-      setSessionExpired(false);
-      const info = await getUserInfo();
-      if (info) setUser(info);
-      showMsg('세션이 갱신되었습니다');
-    } catch {
-      signOut();
-      setUser(null);
-      setSessionExpired(false);
-      showMsg('재로그인이 필요합니다');
-    }
-  };
 
   // GIS 초기화 후 세션 복원
   useEffect(() => {
@@ -176,10 +165,10 @@ function App() {
     return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [tryRestoreSession]);
 
-  // 로그아웃
+  // 로그아웃 — 사용자가 직접 누를 때만
   const handleSignOut = () => {
     signOut();
-    setUser(null);
+    saveUser(null);
     setShowUserMenu(false);
     showMsg('로그아웃 완료');
   };
@@ -287,27 +276,13 @@ function App() {
         {user ? (
           <div className="relative" ref={userMenuRef}>
             <button
-              onClick={() => sessionExpired ? handleReSignIn() : setShowUserMenu(!showUserMenu)}
-              className={`w-9 h-9 rounded-full overflow-hidden shadow-lg border-2 transition-colors ${
-                sessionExpired ? 'border-amber-400 hover:border-amber-500' : 'border-emerald-400 hover:border-emerald-500'
-              }`}
-              title={sessionExpired ? '세션 만료 — 클릭하여 재로그인' : user.name}
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="w-9 h-9 rounded-full overflow-hidden shadow-lg border-2 border-emerald-400 hover:border-emerald-500 transition-colors"
+              title={user.name}
             >
               <img src={user.picture} alt={user.name} className="w-full h-full object-cover" />
             </button>
-            <span className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full ${
-              sessionExpired ? 'bg-amber-400' : 'bg-emerald-400'
-            }`} />
-            {sessionExpired && (
-              <div onClick={handleReSignIn} style={{
-                position: 'absolute', top: '100%', right: 0, marginTop: '6px',
-                padding: '6px 12px', borderRadius: '8px', background: 'rgba(245,158,11,0.9)',
-                color: 'white', fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap',
-                cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              }}>
-                재로그인 필요
-              </div>
-            )}
+            <span className="absolute bottom-0 right-0 w-3 h-3 border-2 border-white rounded-full bg-emerald-400" />
             {showUserMenu && (
               <div className="absolute right-0 top-12 bg-white/90 backdrop-blur-sm rounded-xl shadow-xl border border-white/60 min-w-[200px] overflow-hidden">
                 <div style={{ padding: '14px 20px 10px' }}>
