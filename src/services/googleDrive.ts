@@ -11,6 +11,7 @@ const FILE_ID_KEY = 'classboard-file-id';
 let accessToken: string | null = localStorage.getItem(TOKEN_KEY);
 let cachedFileId: string | null = localStorage.getItem(FILE_ID_KEY);
 let tokenClient: google.accounts.oauth2.TokenClient | null = null;
+let refreshTimer: number | null = null;
 
 export interface CloudData {
   // v1 하위 호환
@@ -23,19 +24,42 @@ export interface CloudData {
   widgetConfigs?: Record<string, Record<string, unknown>>;
 }
 
-// 토큰 + 만료 시각 저장
+// 토큰 + 만료 시각 저장 + 자동 갱신 타이머 설정
 function saveToken(token: string, expiresIn: number) {
   accessToken = token;
   localStorage.setItem(TOKEN_KEY, token);
   const expiryTime = Date.now() + expiresIn * 1000;
   localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiryTime));
+  scheduleRefresh(expiresIn);
+}
+
+// 만료 10분 전에 자동 갱신 예약
+function scheduleRefresh(expiresIn: number) {
+  if (refreshTimer) clearTimeout(refreshTimer);
+  // 만료 10분 전 갱신 (최소 30초 후)
+  const refreshIn = Math.max((expiresIn - 600) * 1000, 30000);
+  refreshTimer = window.setTimeout(async () => {
+    try {
+      await silentRefresh();
+    } catch {
+      // 실패해도 2분 후 재시도
+      scheduleRefresh(720);
+    }
+  }, refreshIn);
 }
 
 // 토큰 만료 여부 확인
 function isTokenExpired(): boolean {
   const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
   if (!expiry) return true;
-  return Date.now() > Number(expiry) - 5 * 60 * 1000;
+  return Date.now() > Number(expiry) - 60 * 1000; // 1분 여유
+}
+
+// 남은 시간 (초)
+function getTokenRemainingSeconds(): number {
+  const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+  if (!expiry) return 0;
+  return Math.max(0, Math.floor((Number(expiry) - Date.now()) / 1000));
 }
 
 // GIS 초기화 — 앱 시작 시 1회 호출
@@ -46,17 +70,16 @@ export function initGis(): Promise<void> {
         tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES,
-          callback: () => {}, // 호출 시점에 동적 교체
+          callback: () => {},
+          error_callback: () => {}, // 에러 콜백 기본 등록
         });
         resolve();
       }
     };
 
-    // 이미 로드됨
     tryInit();
     if (tokenClient) return;
 
-    // 아직 로드 안 됨 → 폴링
     let attempts = 0;
     const check = setInterval(() => {
       attempts++;
@@ -79,21 +102,32 @@ export function signIn(): Promise<string> {
       saveToken(response.access_token, response.expires_in);
       resolve(response.access_token);
     };
+    tokenClient.error_callback = (error: { type: string; message: string }) => {
+      reject(new Error(error.message || '로그인 취소'));
+    };
 
-    // prompt '' → 이전 동의 있으면 자동, 없으면 계정 선택
     tokenClient.requestAccessToken({ prompt: '' });
   });
 }
 
-// 자동 갱신 (prompt: 'none' — 팝업 없이 iframe으로)
+// 자동 갱신 (prompt: 'none' — 팝업 없이)
 function silentRefresh(): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!tokenClient) { reject(new Error('GIS 미초기화')); return; }
 
+    const timeout = setTimeout(() => {
+      reject(new Error('갱신 시간 초과'));
+    }, 15000);
+
     tokenClient.callback = (response: google.accounts.oauth2.TokenResponse) => {
+      clearTimeout(timeout);
       if (response.error) { reject(new Error(response.error)); return; }
       saveToken(response.access_token, response.expires_in);
       resolve(response.access_token);
+    };
+    tokenClient.error_callback = (error: { type: string; message: string }) => {
+      clearTimeout(timeout);
+      reject(new Error(error.message || '갱신 실패'));
     };
 
     tokenClient.requestAccessToken({ prompt: 'none' });
@@ -104,6 +138,7 @@ function silentRefresh(): Promise<string> {
 export function signOut() {
   accessToken = null;
   cachedFileId = null;
+  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(TOKEN_EXPIRY_KEY);
   localStorage.removeItem(FILE_ID_KEY);
@@ -117,16 +152,26 @@ export function isSignedIn() {
 export async function restoreSession(): Promise<'valid' | 'expired' | 'none'> {
   if (!accessToken) return 'none';
 
-  // 만료 전이면 즉시 유효
-  if (!isTokenExpired()) return 'valid';
+  // 만료 전이면 즉시 유효 + 갱신 타이머 재설정
+  if (!isTokenExpired()) {
+    const remaining = getTokenRemainingSeconds();
+    if (remaining > 0) scheduleRefresh(remaining);
+    return 'valid';
+  }
 
-  // 만료됨 → GIS prompt:'none'으로 자동 갱신 시도 (팝업 없음, iframe 사용)
+  // 만료됨 → 자동 갱신 시도
   try {
     await silentRefresh();
     return 'valid';
   } catch {
-    // Google 세션 쿠키 만료 등 → 수동 재로그인 필요
-    return 'expired';
+    // 1차 실패 → 2초 후 재시도
+    await new Promise((r) => setTimeout(r, 2000));
+    try {
+      await silentRefresh();
+      return 'valid';
+    } catch {
+      return 'expired';
+    }
   }
 }
 
