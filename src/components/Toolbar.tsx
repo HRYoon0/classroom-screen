@@ -129,7 +129,7 @@ export default function Toolbar({ onAddWidget, onOpenSettings }: Props) {
               ? <IoChevronDown size={SZ} className="text-indigo-500" />
               : <IoAppsOutline size={SZ} className="text-slate-400" />
             }
-            <span style={{ fontFamily: "'Jua', sans-serif", fontSize: '15px', color: showMore ? '#6366f1' : '#94a3b8' }}>
+            <span style={{ fontFamily: "'Nanum Gothic', sans-serif", fontSize: '15px', color: showMore ? '#6366f1' : '#94a3b8' }}>
               더보기
             </span>
           </button>
@@ -155,7 +155,7 @@ function BarButton({
       className="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-xl hover:bg-slate-100/60 transition-colors shrink-0"
     >
       <span style={{ color }}>{icon}</span>
-      <span style={{ fontFamily: "'Jua', sans-serif", fontSize: '15px', color: '#64748b', whiteSpace: 'nowrap' }}>
+      <span style={{ fontFamily: "'Nanum Gothic', sans-serif", fontSize: '15px', color: '#64748b', whiteSpace: 'nowrap' }}>
         {label}
       </span>
     </button>
