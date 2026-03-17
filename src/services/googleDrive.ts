@@ -11,7 +11,6 @@ const FILE_ID_KEY = 'classboard-file-id';
 let accessToken: string | null = localStorage.getItem(TOKEN_KEY);
 let cachedFileId: string | null = localStorage.getItem(FILE_ID_KEY);
 let tokenClient: google.accounts.oauth2.TokenClient | null = null;
-let refreshTimer: number | null = null;
 
 export interface CloudData {
   // v1 하위 호환
@@ -24,42 +23,33 @@ export interface CloudData {
   widgetConfigs?: Record<string, Record<string, unknown>>;
 }
 
-// 토큰 + 만료 시각 저장 + 자동 갱신 타이머 설정
+// 토큰 + 만료 시각 저장
 function saveToken(token: string, expiresIn: number) {
   accessToken = token;
   localStorage.setItem(TOKEN_KEY, token);
   const expiryTime = Date.now() + expiresIn * 1000;
   localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiryTime));
-  scheduleRefresh(expiresIn);
-}
-
-// 만료 10분 전에 자동 갱신 예약
-function scheduleRefresh(expiresIn: number) {
-  if (refreshTimer) clearTimeout(refreshTimer);
-  // 만료 10분 전 갱신 (최소 30초 후)
-  const refreshIn = Math.max((expiresIn - 600) * 1000, 30000);
-  refreshTimer = window.setTimeout(async () => {
-    try {
-      await silentRefresh();
-    } catch {
-      // 실패해도 2분 후 재시도
-      scheduleRefresh(720);
-    }
-  }, refreshIn);
 }
 
 // 토큰 만료 여부 확인
 function isTokenExpired(): boolean {
   const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
   if (!expiry) return true;
-  return Date.now() > Number(expiry) - 60 * 1000; // 1분 여유
+  return Date.now() > Number(expiry) - 60 * 1000;
 }
 
-// 남은 시간 (초)
-function getTokenRemainingSeconds(): number {
-  const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
-  if (!expiry) return 0;
-  return Math.max(0, Math.floor((Number(expiry) - Date.now()) / 1000));
+// API 호출 전 토큰 확인 + 필요 시 갱신
+async function ensureValidToken(): Promise<boolean> {
+  if (!accessToken) return false;
+  if (!isTokenExpired()) return true;
+
+  // 만료됨 → silentRefresh 시도
+  try {
+    await silentRefresh();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // GIS 초기화 — 앱 시작 시 1회 호출
@@ -71,7 +61,7 @@ export function initGis(): Promise<void> {
           client_id: CLIENT_ID,
           scope: SCOPES,
           callback: () => {},
-          error_callback: () => {}, // 에러 콜백 기본 등록
+          error_callback: () => {},
         });
         resolve();
       }
@@ -110,7 +100,7 @@ export function signIn(): Promise<string> {
   });
 }
 
-// 자동 갱신 (prompt: 'none' — 팝업 없이)
+// 자동 갱신 (prompt: 'none')
 function silentRefresh(): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!tokenClient) { reject(new Error('GIS 미초기화')); return; }
@@ -138,7 +128,6 @@ function silentRefresh(): Promise<string> {
 export function signOut() {
   accessToken = null;
   cachedFileId = null;
-  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(TOKEN_EXPIRY_KEY);
   localStorage.removeItem(FILE_ID_KEY);
@@ -148,40 +137,14 @@ export function isSignedIn() {
   return !!accessToken;
 }
 
-// 앱 시작 / 탭 복귀 시 세션 복원
+// 앱 시작 / 탭 복귀 시 세션 복원 — 팝업 없이 만료 시각만 확인
 export async function restoreSession(): Promise<'valid' | 'expired' | 'none'> {
   if (!accessToken) return 'none';
-
-  // 만료 전이면 즉시 유효 + 갱신 타이머 재설정
-  if (!isTokenExpired()) {
-    const remaining = getTokenRemainingSeconds();
-    if (remaining > 0) scheduleRefresh(remaining);
-    return 'valid';
-  }
-
-  // 만료됨 → 자동 갱신 시도
-  try {
-    await silentRefresh();
-    return 'valid';
-  } catch {
-    // 1차 실패 → 2초 후 재시도
-    await new Promise((r) => setTimeout(r, 2000));
-    try {
-      await silentRefresh();
-      return 'valid';
-    } catch {
-      return 'expired';
-    }
-  }
-}
-
-// 재로그인 (사용자 클릭으로 호출)
-export async function reSignIn(): Promise<string> {
-  try {
-    return await silentRefresh();
-  } catch {
-    return signIn();
-  }
+  // 만료 시각만 확인 (API 호출 없음, 팝업 없음)
+  if (!isTokenExpired()) return 'valid';
+  // 만료됐어도 유저 정보는 localStorage에 캐시되어 있으므로 그냥 expired 반환
+  // 실제 갱신은 다음 API 호출(저장/불러오기) 시 ensureValidToken에서 처리
+  return 'expired';
 }
 
 // appDataFolder에서 파일 ID 찾기
@@ -200,6 +163,10 @@ async function findFileId(useCache = true): Promise<string | null> {
 // 구글 드라이브에서 데이터 로드
 export async function loadFromDrive(): Promise<CloudData | null> {
   if (!accessToken) return null;
+  // API 호출 전 토큰 갱신
+  const valid = await ensureValidToken();
+  if (!valid) return null;
+
   try {
     if (cachedFileId) {
       const res = await fetch(
@@ -226,6 +193,10 @@ export async function loadFromDrive(): Promise<CloudData | null> {
 // 구글 드라이브에 데이터 저장
 export async function saveToDrive(data: CloudData): Promise<boolean> {
   if (!accessToken) return false;
+  // API 호출 전 토큰 갱신
+  const valid = await ensureValidToken();
+  if (!valid) return false;
+
   try {
     const fileId = await findFileId();
     const body = JSON.stringify(data);
