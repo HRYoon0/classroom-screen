@@ -8,7 +8,7 @@ interface UnsplashPhoto {
   id: string;
   urls: { raw: string; small: string };
   user: { name: string; links: { html: string } };
-  links: { html: string };
+  links: { html: string; download_location: string };
 }
 
 interface Props {
@@ -68,10 +68,8 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
   };
 
   const handleSearchPhoto = (photo: UnsplashPhoto) => {
-    // Unsplash API 가이드라인: download 트리거
-    fetch(`https://api.unsplash.com/photos/${photo.id}/download`, {
-      headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` },
-    }).catch(() => {});
+    // Unsplash API 가이드라인: download_location 트리거
+    fetch(`${photo.links.download_location}?client_id=${UNSPLASH_ACCESS_KEY}`).catch(() => {});
     handlePhoto(photo.urls.raw);
   };
 
@@ -186,19 +184,43 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
                         <div style={{ width: '20px', height: '20px', border: '2px solid #e2e8f0', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                       </div>
                     )}
-                    {/* Unsplash 출처 표기 (API 가이드라인) */}
+                    {/* Unsplash Attribution (API 가이드라인) */}
                     <div style={{
                       position: 'absolute',
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      padding: '2px 6px',
-                      background: 'linear-gradient(transparent, rgba(0,0,0,0.5))',
-                      fontSize: '9px',
+                      padding: '3px 6px',
+                      background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+                      fontSize: '8px',
                       color: 'white',
                       textAlign: 'right',
-                    }}>
-                      {photo.user.name}
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: '3px',
+                    }}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <a
+                        href={`${photo.user.links.html}?utm_source=classboard&utm_medium=referral`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: 'white', textDecoration: 'underline' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {photo.user.name}
+                      </a>
+                      <span>/</span>
+                      <a
+                        href="https://unsplash.com/?utm_source=classboard&utm_medium=referral"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: 'white', textDecoration: 'underline' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Unsplash
+                      </a>
                     </div>
                   </button>
                 ))}
@@ -206,7 +228,7 @@ export default function BackgroundPicker({ current, onChange, onClose }: Props) 
 
               {searchResults.length > 0 && (
                 <p style={{ fontSize: '10px', color: '#94a3b8', marginTop: '8px', textAlign: 'center' }}>
-                  Photos by Unsplash
+                  Photos by <a href="https://unsplash.com/?utm_source=classboard&utm_medium=referral" target="_blank" rel="noopener noreferrer" style={{ color: '#94a3b8', textDecoration: 'underline' }}>Unsplash</a>
                 </p>
               )}
             </div>
