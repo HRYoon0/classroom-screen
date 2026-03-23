@@ -35,15 +35,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
       return res.status(200).json({ ok: updateRes.ok });
     } else {
-      // 생성
-      const metadata = { name: FILE_NAME, parents: ['appDataFolder'] };
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      form.append('file', new Blob([body], { type: 'application/json' }));
+      // 생성 — multipart/related 수동 구성 (Node.js 호환)
+      const metadata = JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] });
+      const boundary = '---classboard-boundary---';
+      const multipartBody =
+        `--${boundary}\r\n` +
+        `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
+        `${metadata}\r\n` +
+        `--${boundary}\r\n` +
+        `Content-Type: application/json\r\n\r\n` +
+        `${body}\r\n` +
+        `--${boundary}--`;
 
       const createRes = await fetch(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-        { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` }, body: form }
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': `multipart/related; boundary=${boundary}`,
+          },
+          body: multipartBody,
+        }
       );
       return res.status(200).json({ ok: createRes.ok });
     }
