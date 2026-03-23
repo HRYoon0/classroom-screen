@@ -146,7 +146,7 @@ export default function TimerWidget({ config, onConfigChange }: Props) {
             className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-7 h-7 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:border-indigo-300 transition-colors"
             title="초기화"
           >
-            <IoRefresh size={14} />
+            <IoRefresh size={16} />
           </button>
         )}
       </div>
