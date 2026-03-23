@@ -1,43 +1,41 @@
-import crypto from 'crypto';
+// 세션 관리 — Base64 인코딩 (httpOnly + Secure 쿠키로 보호)
 
-const SECRET = process.env.SESSION_SECRET || '';
 const COOKIE_NAME = 'cb_session';
 
-interface SessionData {
+export interface SessionData {
   accessToken: string;
   refreshToken: string;
-  expiresAt: number; // timestamp ms
+  expiresAt: number;
   user: { name: string; email: string; picture: string };
 }
 
-// AES-256-GCM 암호화
-function encrypt(data: string): string {
-  const key = crypto.scryptSync(SECRET, 'salt', 32);
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  let encrypted = cipher.update(data, 'utf8', 'base64');
-  encrypted += cipher.final('base64');
-  const tag = cipher.getAuthTag();
-  return `${iv.toString('base64')}.${tag.toString('base64')}.${encrypted}`;
+// 쿠키 수동 파싱
+function parseCookies(header: string | undefined): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  if (!header) return cookies;
+  header.split(';').forEach((c) => {
+    const [key, ...rest] = c.trim().split('=');
+    if (key) cookies[key] = rest.join('=');
+  });
+  return cookies;
 }
 
-function decrypt(encoded: string): string {
-  const [ivB64, tagB64, encrypted] = encoded.split('.');
-  if (!ivB64 || !tagB64 || !encrypted) throw new Error('Invalid session');
-  const key = crypto.scryptSync(SECRET, 'salt', 32);
-  const iv = Buffer.from(ivB64, 'base64');
-  const tag = Buffer.from(tagB64, 'base64');
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-  decipher.setAuthTag(tag);
-  let decrypted = decipher.update(encrypted, 'base64', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
+// 요청에서 세션 파싱
+export function parseSession(cookieHeader: string | undefined): SessionData | null {
+  const cookies = parseCookies(cookieHeader);
+  const value = cookies[COOKIE_NAME];
+  if (!value) return null;
+  try {
+    return JSON.parse(Buffer.from(value, 'base64').toString());
+  } catch {
+    return null;
+  }
 }
 
 // 세션 쿠키 생성
 export function createSessionCookie(session: SessionData): string {
-  const value = encrypt(JSON.stringify(session));
-  const maxAge = 30 * 24 * 60 * 60; // 30일
+  const value = Buffer.from(JSON.stringify(session)).toString('base64');
+  const maxAge = 30 * 24 * 60 * 60;
   return `${COOKIE_NAME}=${value}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
@@ -46,41 +44,32 @@ export function deleteSessionCookie(): string {
   return `${COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
-// 요청에서 세션 파싱
-export function parseSession(cookieHeader: string | undefined): SessionData | null {
-  if (!cookieHeader) return null;
-  const match = cookieHeader.split(';').find((c) => c.trim().startsWith(`${COOKIE_NAME}=`));
-  if (!match) return null;
-  const value = match.split('=').slice(1).join('=').trim();
-  if (!value) return null;
+// access_token 갱신
+export async function refreshAccessToken(refreshToken: string): Promise<{
+  accessToken: string;
+  expiresIn: number;
+} | null> {
+  if (!refreshToken) return null;
   try {
-    return JSON.parse(decrypt(value));
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: refreshToken,
+        client_id: process.env.GOOGLE_CLIENT_ID || '',
+        client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+      }).toString(),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return { accessToken: data.access_token, expiresIn: data.expires_in };
   } catch {
     return null;
   }
 }
 
-// access_token 갱신 (만료 시)
-export async function refreshAccessToken(refreshToken: string): Promise<{
-  accessToken: string;
-  expiresIn: number;
-} | null> {
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-      client_id: process.env.GOOGLE_CLIENT_ID || '',
-      client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-    }),
-  });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return { accessToken: data.access_token, expiresIn: data.expires_in };
-}
-
-// 유효한 access_token을 가진 세션 반환 (자동 갱신 포함)
+// 유효한 세션 반환 (자동 갱신 포함)
 export async function getValidSession(
   cookieHeader: string | undefined
 ): Promise<{ session: SessionData; newCookie?: string } | null> {
