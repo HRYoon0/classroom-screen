@@ -87,7 +87,7 @@ export function signIn(): Promise<string> {
       reject(new Error(error.message || '로그인 취소'));
     };
 
-    tokenClient.requestAccessToken({ prompt: '' });
+    tokenClient.requestAccessToken({ prompt: 'select_account' });
   });
 }
 
