@@ -39,6 +39,7 @@ function isTokenExpired(): boolean {
 }
 
 // API 호출 전 토큰 확인 + 필요 시 갱신
+// 갱신 실패해도 기존 토큰이 있으면 true 반환 (실제 API 호출에서 판단)
 async function ensureValidToken(): Promise<boolean> {
   if (!accessToken) return false;
   if (!isTokenExpired()) return true;
@@ -46,10 +47,10 @@ async function ensureValidToken(): Promise<boolean> {
   // 만료됨 → silentRefresh 시도
   try {
     await silentRefresh();
-    return true;
   } catch {
-    return false;
+    // 갱신 실패해도 기존 토큰으로 시도 (실제로는 아직 유효할 수 있음)
   }
+  return !!accessToken;
 }
 
 // GIS 초기화 — 앱 시작 시 1회 호출
