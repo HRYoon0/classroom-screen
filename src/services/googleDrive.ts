@@ -38,18 +38,8 @@ function isTokenExpired(): boolean {
   return Date.now() > Number(expiry) - 60 * 1000;
 }
 
-// API 호출 전 토큰 확인 + 필요 시 갱신
-// 갱신 실패해도 기존 토큰이 있으면 true 반환 (실제 API 호출에서 판단)
-async function ensureValidToken(): Promise<boolean> {
-  if (!accessToken) return false;
-  if (!isTokenExpired()) return true;
-
-  // 만료됨 → silentRefresh 시도
-  try {
-    await silentRefresh();
-  } catch {
-    // 갱신 실패해도 기존 토큰으로 시도 (실제로는 아직 유효할 수 있음)
-  }
+// 토큰 존재 여부만 확인 (갱신은 시도하지 않음 — 팝업 차단 방지)
+function hasToken(): boolean {
   return !!accessToken;
 }
 
@@ -144,7 +134,7 @@ export async function restoreSession(): Promise<'valid' | 'expired' | 'none'> {
   // 만료 시각만 확인 (API 호출 없음, 팝업 없음)
   if (!isTokenExpired()) return 'valid';
   // 만료됐어도 유저 정보는 localStorage에 캐시되어 있으므로 그냥 expired 반환
-  // 실제 갱신은 다음 API 호출(저장/불러오기) 시 ensureValidToken에서 처리
+  // 만료됐어도 유저 정보는 localStorage에 캐시되어 있으므로 프로필 유지
   return 'expired';
 }
 
@@ -164,9 +154,7 @@ async function findFileId(useCache = true): Promise<string | null> {
 // 구글 드라이브에서 데이터 로드
 export async function loadFromDrive(): Promise<CloudData | null> {
   if (!accessToken) return null;
-  // API 호출 전 토큰 갱신
-  const valid = await ensureValidToken();
-  if (!valid) return null;
+  if (!hasToken()) return null;
 
   try {
     if (cachedFileId) {
@@ -194,9 +182,7 @@ export async function loadFromDrive(): Promise<CloudData | null> {
 // 구글 드라이브에 데이터 저장
 export async function saveToDrive(data: CloudData): Promise<boolean> {
   if (!accessToken) return false;
-  // API 호출 전 토큰 갱신
-  const valid = await ensureValidToken();
-  if (!valid) return false;
+  if (!hasToken()) return false;
 
   try {
     const fileId = await findFileId();
