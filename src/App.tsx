@@ -12,12 +12,9 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   signIn,
   signOut,
-  isSignedIn,
+  getMe,
   saveToDrive,
   loadFromDrive,
-  getUserInfo,
-  restoreSession,
-  initGis,
 } from './services/googleDrive';
 
 function App() {
@@ -44,7 +41,7 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string | null>(null);
 
-  // 구글 드라이브 관련 상태 — 유저 정보를 localStorage에 캐시
+  // 유저 상태 — localStorage 캐시
   const [user, setUser] = useState<{ name: string; email: string; picture: string } | null>(() => {
     try {
       const cached = localStorage.getItem('classboard-user');
@@ -56,6 +53,7 @@ function App() {
     if (info) localStorage.setItem('classboard-user', JSON.stringify(info));
     else localStorage.removeItem('classboard-user');
   };
+
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState('');
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -73,7 +71,6 @@ function App() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showUserMenu]);
 
-  // 동기화 메시지 자동 숨김
   const msgTimerRef = useRef<number>(0);
   const showMsg = (msg: string) => {
     setSyncMsg(msg);
@@ -83,11 +80,8 @@ function App() {
 
   // 전체화면
   const toggleFullscreen = useCallback(() => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
   }, []);
 
   useEffect(() => {
@@ -96,78 +90,49 @@ function App() {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  const handleBgChange = (bg: string) => {
-    setBackground(bg);
-  };
+  const handleBgChange = (bg: string) => setBackground(bg);
 
-  // 로그인 로딩 상태
-  const [loginLoading, setLoginLoading] = useState(false);
-
-  // 클라우드 데이터 → 페이지 로드 헬퍼
+  // 클라우드 데이터 로드 헬퍼
   const loadCloudData = (data: Awaited<ReturnType<typeof loadFromDrive>>) => {
     if (!data) return;
     skipAutoSaveRef.current = true;
     if (data.pages && data.version === 2) {
-      // v2 멀티 페이지
       loadAllPages(data.pages as PageData[]);
     } else if (data.widgets) {
-      // v1 하위 호환: 단일 페이지로 변환
       loadAllPages([{
         id: uuidv4(),
         widgets: data.widgets as PageData['widgets'],
         background: data.background || background,
       }]);
     }
-    if (data.widgetConfigs) {
-      setAllWidgetConfigs(data.widgetConfigs);
-    }
+    if (data.widgetConfigs) setAllWidgetConfigs(data.widgetConfigs);
   };
 
-  // 구글 로그인
-  const handleSignIn = async () => {
-    try {
-      await signIn();
-      setLoginLoading(true);
-      const [info, data] = await Promise.all([getUserInfo(), loadFromDrive()]);
-      if (info) saveUser(info);
-      loadCloudData(data);
-      showMsg(`${info?.name || ''}님 로그인 완료`);
-    } catch {
-      // 팝업 닫힘 또는 차단
-    }
-    setLoginLoading(false);
-  };
+  // 앱 시작 시 세션 확인 + 로그인 성공 후 데이터 로드
+  useEffect(() => {
+    (async () => {
+      const result = await getMe();
+      if (result.loggedIn && result.user) {
+        saveUser(result.user);
 
-  // 세션 복원 함수 — 실패해도 로그아웃하지 않음
-  const tryRestoreSession = useCallback(async () => {
-    if (!isSignedIn()) return;
-    const status = await restoreSession();
-    if (status === 'valid') {
-      const info = await getUserInfo();
-      if (info) saveUser(info);
-    }
-    // expired여도 아무것도 안 함 — 백그라운드 타이머가 계속 갱신 시도
+        // ?login=success 쿼리가 있으면 클라우드에서 데이터 로드
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('login') === 'success') {
+          window.history.replaceState({}, '', '/');
+          const data = await loadFromDrive();
+          loadCloudData(data);
+          showMsg(`${result.user.name}님 로그인 완료`);
+        }
+      }
+    })();
   }, []);
 
-  // GIS 초기화 후 세션 복원
-  useEffect(() => {
-    initGis().then(() => tryRestoreSession()).catch(() => {});
-  }, [tryRestoreSession]);
+  // 로그인 버튼
+  const handleSignIn = () => signIn();
 
-  // 탭 재활성화 시 토큰 검증
-  useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible' && isSignedIn()) {
-        tryRestoreSession();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [tryRestoreSession]);
-
-  // 로그아웃 — 사용자가 직접 누를 때만
-  const handleSignOut = () => {
-    signOut();
+  // 로그아웃
+  const handleSignOut = async () => {
+    await signOut();
     saveUser(null);
     setShowUserMenu(false);
     showMsg('로그아웃 완료');
@@ -181,14 +146,10 @@ function App() {
 
   useEffect(() => {
     if (!user) return;
-    if (skipAutoSaveRef.current) {
-      skipAutoSaveRef.current = false;
-      return;
-    }
+    if (skipAutoSaveRef.current) { skipAutoSaveRef.current = false; return; }
 
     clearTimeout(autoSaveTimerRef.current);
     autoSaveTimerRef.current = window.setTimeout(async () => {
-      if (!isSignedIn()) return;
       const ok = await saveToDrive({
         pages: pagesRef.current,
         widgetConfigs: getAllWidgetConfigs(),
@@ -200,18 +161,18 @@ function App() {
     return () => clearTimeout(autoSaveTimerRef.current);
   }, [pages, user]);
 
-  // 수동 클라우드 저장
+  // 수동 저장
   const handleSave = async () => {
-    if (!isSignedIn()) { showMsg('먼저 로그인해주세요'); return; }
+    if (!user) { showMsg('먼저 로그인해주세요'); return; }
     setSyncing(true);
     const ok = await saveToDrive({ pages, widgetConfigs: getAllWidgetConfigs(), version: 2 });
     setSyncing(false);
     showMsg(ok ? '클라우드에 저장 완료' : '저장 실패');
   };
 
-  // 클라우드에서 불러오기
+  // 수동 불러오기
   const handleLoad = async () => {
-    if (!isSignedIn()) { showMsg('먼저 로그인해주세요'); return; }
+    if (!user) { showMsg('먼저 로그인해주세요'); return; }
     setSyncing(true);
     const data = await loadFromDrive();
     setSyncing(false);
@@ -223,7 +184,7 @@ function App() {
     }
   };
 
-  // 페이지 전환 시 위젯 선택 해제
+  // 페이지 전환
   const handleSwitchPage = (index: number) => {
     setSelectedWidgetId(null);
     switchPage(index);
@@ -237,15 +198,6 @@ function App() {
 
   return (
     <div className="w-full h-full relative overflow-hidden" style={bgStyle} onMouseDown={() => setSelectedWidgetId(null)}>
-      {/* 로그인 로딩 오버레이 */}
-      {loginLoading && (
-        <div className="absolute inset-0 z-[99999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl flex flex-col items-center gap-4" style={{ padding: '32px 48px' }}>
-            <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium text-slate-700">로그인 중...</p>
-          </div>
-        </div>
-      )}
 
       {/* 오른쪽 상단 버튼들 */}
       <div className="absolute top-4 right-4 z-[9999] flex items-center gap-2">
@@ -336,7 +288,6 @@ function App() {
         />
       ))}
 
-      {/* 빈 화면 안내 */}
       {widgets.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center text-white/70">
@@ -347,22 +298,12 @@ function App() {
         </div>
       )}
 
-      {/* 하단 도구 모음 */}
-      <Toolbar
-        onAddWidget={addWidget}
-        onOpenSettings={() => setShowSettings(true)}
-      />
+      <Toolbar onAddWidget={addWidget} onOpenSettings={() => setShowSettings(true)} />
 
-      {/* 배경 설정 모달 */}
       {showSettings && (
-        <BackgroundPicker
-          current={background}
-          onChange={handleBgChange}
-          onClose={() => setShowSettings(false)}
-        />
+        <BackgroundPicker current={background} onChange={handleBgChange} onClose={() => setShowSettings(false)} />
       )}
 
-      {/* 페이지 네비게이션 */}
       <PageNavigator
         currentPage={currentPageIndex}
         totalPages={totalPages}
@@ -372,12 +313,10 @@ function App() {
         onRemove={removePage}
       />
 
-      {/* 하단 왼쪽 제작자 */}
       <div className="absolute bottom-2 left-4 z-[9999]">
         <span className="text-[10px] text-white/40">제작자: 윤희류(경남 황산초등학교) | 참고한 페이지: classroomscreen.com</span>
       </div>
 
-      {/* 하단 오른쪽 링크 */}
       <div className="absolute bottom-2 right-4 z-[9999] flex gap-3">
         <span className="text-[10px] text-white/40">교실에서 사용하는 무료 위젯 화면 도구</span>
         <a href="/privacy" target="_blank" className="text-[10px] text-white/40 hover:text-white/70 transition-colors">개인정보처리방침</a>
